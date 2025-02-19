@@ -1,0 +1,11 @@
+/* .adminjs_Box{
+    display: none !important;
+} */
+
+/* section[data-css="sidebar-footer"]{
+    display: none !important;
+} */
+
+section:has(> a[href="https://adminjs.co/"]){
+    display: none !important;
+}
