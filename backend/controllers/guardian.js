@@ -112,6 +112,23 @@ exports.defaultActiveGuardiansOnly = (request) => {
     return request;
 };
 
+exports.studentIdToStudent = (request) => {
+    const { query = {} } = request;
+    if (query['filters.studentId']) {
+        query['filters.students'] = query['filters.studentId'];
+    }
+
+    delete query['filters.studentId'];
+
+    const newQuery = {
+        ...query
+    };
+
+    request.query = newQuery;
+
+    return request;
+};
+
 exports.validateGuardianIndentityNumber = (request) => {
     const { payload = {} } = request;
     const indentityNumber = payload.indentityNumber;

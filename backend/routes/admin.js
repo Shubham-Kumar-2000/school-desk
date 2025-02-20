@@ -12,6 +12,7 @@ const mongoose = require('mongoose');
 const {
     deleteGuardian,
     defaultActiveGuardiansOnly,
+    studentIdToStudent,
     validateGuardianIndentityNumber
 } = require('../controllers/guardian');
 const Testimonial = require('../models/testimonials');
@@ -137,6 +138,24 @@ const getAdminRouter = async () => {
                         },
                         notificationSettings: {
                             isVisible: false
+                        },
+                        students: {
+                            isVisible: {
+                                edit: true,
+                                filter: true,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        studentId: {
+                            type: 'reference',
+                            reference: 'Student',
+                            isVisible: {
+                                edit: false,
+                                filter: true,
+                                show: false,
+                                list: false
+                            }
                         }
                     },
                     actions: {
@@ -154,12 +173,14 @@ const getAdminRouter = async () => {
                         bulkDelete: { isVisible: false },
                         list: {
                             before: [
-                                beforeHookWrapper(defaultActiveGuardiansOnly)
+                                beforeHookWrapper(defaultActiveGuardiansOnly),
+                                beforeHookWrapper(studentIdToStudent)
                             ]
                         },
                         search: {
                             before: [
-                                beforeHookWrapper(defaultActiveGuardiansOnly)
+                                beforeHookWrapper(defaultActiveGuardiansOnly),
+                                beforeHookWrapper(studentIdToStudent)
                             ]
                         }
                     }

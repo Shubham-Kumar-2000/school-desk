@@ -41,6 +41,7 @@ exports.errorHandler = (err, req, res, _next) => {
             errType: constants.ERROR_TYPES.CUSTOM
         });
     }
+    console.error(err);
     return res.status(500).json({
         err: true,
         msg:
