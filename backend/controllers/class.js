@@ -7,9 +7,12 @@ exports.defaultCurrentBatchClassesOnly = (request) => {
         currentYear = currentYear - 1;
     }
 
+    if (!query['filters.batch']) {
+        query['filters.batch'] = currentYear;
+    }
+
     const newQuery = {
-        ...query,
-        batch: currentYear
+        ...query
     };
 
     request.query = newQuery;

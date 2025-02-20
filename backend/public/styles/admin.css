@@ -9,3 +9,7 @@
 section:has(> a[href="https://adminjs.co/"]){
     display: none !important;
 }
+
+.login__Wrapper > section > section {
+    display: none !important;
+}

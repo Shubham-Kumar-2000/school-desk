@@ -120,7 +120,7 @@ const getAdminRouter = async () => {
                             isVisible: {
                                 edit: false,
                                 list: false,
-                                filter: true,
+                                filter: false,
                                 show: true
                             }
                         },
@@ -128,7 +128,7 @@ const getAdminRouter = async () => {
                             isVisible: {
                                 edit: false,
                                 list: false,
-                                filter: true,
+                                filter: false,
                                 show: true
                             }
                         },
@@ -181,7 +181,7 @@ const getAdminRouter = async () => {
                             isVisible: {
                                 edit: false,
                                 list: false,
-                                filter: true,
+                                filter: false,
                                 show: true
                             }
                         },
@@ -189,7 +189,7 @@ const getAdminRouter = async () => {
                             isVisible: {
                                 edit: false,
                                 list: false,
-                                filter: true,
+                                filter: false,
                                 show: true
                             }
                         }
@@ -223,7 +223,7 @@ const getAdminRouter = async () => {
                             isVisible: {
                                 edit: false,
                                 list: false,
-                                filter: true,
+                                filter: false,
                                 show: true
                             }
                         },
@@ -231,13 +231,14 @@ const getAdminRouter = async () => {
                             isVisible: {
                                 edit: false,
                                 list: false,
-                                filter: true,
+                                filter: false,
                                 show: true
                             }
                         }
                     },
                     actions: {
                         bulkDelete: { isVisible: false },
+                        delete: { isVisible: false },
                         list: {
                             before: [
                                 beforeHookWrapper(
@@ -300,6 +301,14 @@ const getAdminRouter = async () => {
                                 list: false,
                                 filter: true,
                                 show: true
+                            }
+                        },
+                        avatar: {
+                            isVisible: {
+                                edit: true,
+                                filter: false,
+                                show: true,
+                                list: false
                             }
                         }
                     },
