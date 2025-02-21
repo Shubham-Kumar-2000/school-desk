@@ -23,12 +23,10 @@ const {
     createdByGuardView
 } = require('../controllers/notice');
 const { preFillResultDefaultFields } = require('../controllers/result');
-const Testimonial = require('../models/testimonials');
 const { ADMIN_AUTH_SESSION_EXPIRY_HOURS } = require('../config/constants');
 const { defaultCurrentBatchClassesOnly } = require('../controllers/class');
 const { defaultActiveStudentsOnly } = require('../controllers/student');
 const Question = require('../models/question');
-const { list } = require('../controllers/testimonial');
 const {
     getQuestionForTeacher,
     answerQuestionForTeacher
@@ -54,39 +52,6 @@ const getAdminRouter = async () => {
     const admin = new AdminJS({
         rootPath: '/admin',
         resources: [
-            {
-                resource: Testimonial,
-                options: {
-                    properties: {
-                        createdAt: {
-                            isVisible: {
-                                edit: false,
-                                list: false,
-                                filter: true,
-                                show: true
-                            }
-                        },
-                        updatedAt: {
-                            isVisible: {
-                                edit: false,
-                                list: false,
-                                filter: true,
-                                show: true
-                            }
-                        },
-                        description: {
-                            type: 'textarea',
-                            props: {
-                                rows: 5
-                            },
-                            isVisible: {
-                                edit: true,
-                                show: true
-                            }
-                        }
-                    }
-                }
-            },
             {
                 resource: Guardian,
                 options: {
