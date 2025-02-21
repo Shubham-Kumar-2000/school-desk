@@ -152,7 +152,7 @@ exports.acknowledgeNotice = async (req, res, next) => {
                 }
             ],
             published: true,
-            'targets.requiredAcknowledgement': true,
+            'targets.acknowdegementRequired': true,
             _id: new mongoose.Types.ObjectId(req.params.id)
         };
 
