@@ -1,3 +1,5 @@
+const Result = require('../models/result');
+
 exports.preFillResultDefaultFields = (request, context) => {
     const { payload = {} } = request;
     payload.createdBy = context.currentAdmin._id;
@@ -14,4 +16,8 @@ exports.preFillResultDefaultFields = (request, context) => {
     request.payload = newPayload;
 
     return request;
+};
+
+exports.fetchRecentResults = (studentId) => {
+    return Result.find({ student: studentId }).sort({ createdAt: -1 }).limit(5);
 };

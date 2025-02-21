@@ -71,6 +71,38 @@ const translateNotices = (notices, language) => {
     });
 };
 
+exports.fetchRecentNotices = async (studentId, classId) => {
+    const filter = {
+        $or: [
+            {
+                'targets.audienceType': TARGET_AUDIENCE_TYPES.ALL
+            },
+            {
+                'targets.audienceType': TARGET_AUDIENCE_TYPES.STUDENT,
+                'targets.student': new mongoose.Types.ObjectId(studentId)
+            },
+            {
+                'targets.audienceType': TARGET_AUDIENCE_TYPES.GROUP_OF_STUDENTS,
+                'targets.students': new mongoose.Types.ObjectId(studentId)
+            },
+            {
+                'targets.audienceType': TARGET_AUDIENCE_TYPES.CLASS,
+                'targets.class': new mongoose.Types.ObjectId(classId)
+            }
+        ]
+    };
+
+    const notices = await Notice.find(filter)
+        .sort({ publishOn: -1 })
+        .limit(5)
+        .populate('createdBy');
+    return notices;
+};
+
+exports.fetchRecentNoticeId = async (noticeId) => {
+    return Notice.findById(noticeId);
+};
+
 exports.getMyNotifications = async (req, res, next) => {
     try {
         const student = req.student;

@@ -18,6 +18,7 @@
     "@aws-sdk/client-sns": "^3.414.0",
     "@azure/communication-email": "^1.0.0",
     "@google-cloud/storage": "^5.2.0",
+    "@google/generative-ai": "^0.22.0",
     "adminjs": "^7.2.2",
     "bcryptjs": "^2.4.3",
     "connect-mongo": "^5.0.0",

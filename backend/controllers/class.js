@@ -1,3 +1,5 @@
+const Class = require('../models/class');
+
 exports.defaultCurrentBatchClassesOnly = (request) => {
     const { query = {} } = request;
     let currentYear = new Date().getFullYear();
@@ -18,4 +20,10 @@ exports.defaultCurrentBatchClassesOnly = (request) => {
     request.query = newQuery;
 
     return request;
+};
+
+exports.fetchClass = (classId) => {
+    return Class.findById(classId)
+        .populate('classTeacher')
+        .populate('schedule.teacher');
 };
