@@ -6,6 +6,7 @@ const logger = require('morgan');
 const cors = require('cors');
 const { errorHandler } = require('./helpers/errorHelper');
 const Mongoose = require('./models/index');
+const tokenHelper = require('./helpers/tokenHelper');
 const app = express();
 app.use(cors());
 
@@ -17,6 +18,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const usersRouter = require('./routes/guardian');
 const testimonialsRouter = require('./routes/testimonials');
+const noticeRouter = require('./routes/notice');
+const questionsRouter = require('./routes/question');
 const getAdminRouter = require('./routes/admin');
 
 const getApp = async () => {
@@ -28,6 +31,8 @@ const getApp = async () => {
 
     app.use('/users', usersRouter);
     app.use('/testimonials', testimonialsRouter);
+    app.use('/notice', tokenHelper.validate, noticeRouter);
+    app.use('/questions', tokenHelper.validate, questionsRouter);
 
     app.use(function (req, res, next) {
         next(createError(404));

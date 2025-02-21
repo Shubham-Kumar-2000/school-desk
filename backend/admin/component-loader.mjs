@@ -9,7 +9,8 @@ if (Os.platform() !== 'win32') {
         './dashboard.jsx'
     );
     Components['NoticeTargets'] = componentLoader.add(
-        'NoticeTargetsEdit',
+        'NoticeTargets',
         './noticeTargets.jsx'
     );
+    Components['Answer'] = componentLoader.add('Answer', './answer.jsx');
 }

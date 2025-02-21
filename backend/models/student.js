@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const addressSchema = require('./address');
-const { USER_STATUS } = require('../config/constants');
+const { USER_STATUS, GENDERS } = require('../config/constants');
 
 const Schema = mongoose.Schema;
 
@@ -24,7 +24,13 @@ const studentSchema = new Schema(
 
         address: { type: addressSchema, required: true },
 
-        dob: { type: Date, required: true }
+        dob: { type: Date, required: true },
+        gender: {
+            type: String,
+            required: true,
+            default: GENDERS.MALE,
+            enum: Object.values(GENDERS)
+        }
     },
     { timestamps: true }
 );

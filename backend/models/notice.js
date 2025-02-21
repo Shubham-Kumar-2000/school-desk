@@ -6,7 +6,7 @@ const targetSchema = new Schema({
     audienceType: {
         type: String,
         required: true,
-        enum: TARGET_AUDIENCE_TYPES
+        enum: Object.keys(TARGET_AUDIENCE_TYPES)
     },
     student: {
         type: mongoose.Types.ObjectId,
@@ -22,6 +22,21 @@ const targetSchema = new Schema({
         type: mongoose.Types.ObjectId,
         ref: 'Class',
         required: false
+    },
+    acknowdegementRequired: {
+        type: Boolean,
+        required: true,
+        default: false
+    },
+    acknowledgedBy: {
+        type: [mongoose.Types.ObjectId],
+        ref: 'Student',
+        required: false
+    },
+    acknowledged: {
+        type: Boolean,
+        required: true,
+        default: false
     }
 });
 
@@ -33,7 +48,7 @@ const noticeSchema = new Schema(
         noticeType: {
             type: String,
             required: true,
-            enum: NOTICE_TYPES
+            enum: Object.keys(NOTICE_TYPES)
         },
         published: {
             type: Boolean,
@@ -60,6 +75,20 @@ const noticeSchema = new Schema(
             type: mongoose.Types.ObjectId,
             ref: 'AdminTeacher',
             required: true
+        },
+        translationsCache: {
+            type: Object,
+            required: true,
+            default: {}
+        },
+        resultAttached: {
+            type: mongoose.Types.ObjectId,
+            ref: 'Result',
+            required: false
+        },
+        img: {
+            type: String,
+            required: false
         }
     },
     { timestamps: true }

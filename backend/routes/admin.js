@@ -27,6 +27,12 @@ const Testimonial = require('../models/testimonials');
 const { ADMIN_AUTH_SESSION_EXPIRY_HOURS } = require('../config/constants');
 const { defaultCurrentBatchClassesOnly } = require('../controllers/class');
 const { defaultActiveStudentsOnly } = require('../controllers/student');
+const Question = require('../models/question');
+const { list } = require('../controllers/testimonial');
+const {
+    getQuestionForTeacher,
+    answerQuestionForTeacher
+} = require('../controllers/question');
 
 const getAdminRouter = async () => {
     const AdminJS = (await import('adminjs')).default;
@@ -411,6 +417,24 @@ const getAdminRouter = async () => {
                                 filter: false,
                                 show: true,
                                 list: false
+                            },
+                            properties: {
+                                acknowledged: {
+                                    isVisible: {
+                                        edit: false,
+                                        filter: true,
+                                        show: true,
+                                        list: false
+                                    }
+                                },
+                                acknowledgedBy: {
+                                    isVisible: {
+                                        edit: false,
+                                        filter: false,
+                                        show: true,
+                                        list: false
+                                    }
+                                }
                             }
                         },
                         published: {
@@ -420,6 +444,17 @@ const getAdminRouter = async () => {
                                 show: true,
                                 list: false
                             }
+                        },
+                        resultAttached: {
+                            isVisible: {
+                                edit: false,
+                                filter: false,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        translationsCache: {
+                            isVisible: false
                         }
                     },
                     actions: {
@@ -496,6 +531,52 @@ const getAdminRouter = async () => {
                         },
                         edit: {
                             before: [beforeHookWrapper(createdByGuard)]
+                        }
+                    }
+                }
+            },
+            {
+                resource: Question,
+                options: {
+                    properties: {
+                        question: {
+                            type: 'textarea'
+                        },
+                        'answers.text': {
+                            type: 'textarea'
+                        },
+                        requiredHumanIntervention: {
+                            isVisible: {
+                                edit: false,
+                                filter: true,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        humanAnswered: {
+                            isVisible: {
+                                edit: false,
+                                filter: true,
+                                show: true,
+                                list: false
+                            }
+                        }
+                    },
+                    actions: {
+                        bulkDelete: { isVisible: false },
+                        new: { isVisible: false },
+                        edit: { isVisible: false },
+                        delete: { isVisible: false },
+                        list: {
+                            before: [beforeHookWrapper(getQuestionForTeacher)]
+                        },
+                        search: {
+                            before: [beforeHookWrapper(getQuestionForTeacher)]
+                        },
+                        answer: {
+                            actionType: 'record',
+                            component: Components.Answer,
+                            handler: handlerWrapper(answerQuestionForTeacher)
                         }
                     }
                 }

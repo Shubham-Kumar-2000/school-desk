@@ -33,10 +33,12 @@ module.exports = {
 
     SUPPORTED_LANGUAGES: {
         English: {
+            key: 'English',
             bcp_code: 'en-US',
             indic_trans_code: 'en'
         },
         Hindi: {
+            key: 'Hindi',
             bcp_code: 'hi-IN',
             indic_trans_code: 'hi'
         }
@@ -74,5 +76,10 @@ module.exports = {
             key: 'PASSPORT',
             regex: /[A-Z][1-9]\d\s?\d{4}[1-9]$/
         }
+    },
+
+    GENDERS: {
+        MALE: 'MALE',
+        FEMALE: 'FEMALE'
     }
 };
