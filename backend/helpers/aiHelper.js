@@ -102,8 +102,6 @@ exports.askAi = async (question, student, guardian, noticeId) => {
     ${question}
     `;
 
-    console.log(prompt);
-
     const response = await model.generateContent([prompt]);
     return response.response.text();
 };
