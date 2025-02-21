@@ -42,6 +42,21 @@ module.exports = {
         }
     },
 
+    NOTICE_TYPES: {
+        INFO: 'INFO',
+        COMPLAINS: 'COMPLAINS',
+        EVENTS: 'EVENTS',
+        SCHOLARSHIPS: 'SCHOLARSHIPS',
+        ADMINISTRATIVE: 'ADMINISTRATIVE'
+    },
+
+    TARGET_AUDIENCE_TYPES: {
+        STUDENT: 'STUDENT',
+        GROUP_OF_STUDENTS: 'GROUP_OF_STUDENTS',
+        CLASS: 'CLASS',
+        ALL: 'ALL'
+    },
+
     IDENTITY_TYPES: {
         AADHAR: {
             key: 'AADHAR',

@@ -6,6 +6,8 @@ process.env['NODE_ENV'] = 'production';
 const Guardian = require('../models/guardian');
 const Class = require('../models/class');
 const Student = require('../models/student');
+const Notice = require('../models/notice');
+const Result = require('../models/result');
 const AdminTeacher = require('../models/adminTeachers');
 const MongoStore = require('connect-mongo');
 const mongoose = require('mongoose');
@@ -15,6 +17,12 @@ const {
     studentIdToStudent,
     validateGuardianIndentityNumber
 } = require('../controllers/guardian');
+const {
+    preFillNoticeDefaultFields,
+    createdByGuard,
+    createdByGuardView
+} = require('../controllers/notice');
+const { preFillResultDefaultFields } = require('../controllers/result');
 const Testimonial = require('../models/testimonials');
 const { ADMIN_AUTH_SESSION_EXPIRY_HOURS } = require('../config/constants');
 const { defaultCurrentBatchClassesOnly } = require('../controllers/class');
@@ -345,6 +353,149 @@ const getAdminRouter = async () => {
                             before: [
                                 beforeHookWrapper(defaultActiveStudentsOnly)
                             ]
+                        }
+                    }
+                }
+            },
+            {
+                resource: Notice,
+                options: {
+                    properties: {
+                        description: {
+                            type: 'richtext'
+                        },
+                        createdBy: {
+                            isVisible: {
+                                edit: false,
+                                list: false,
+                                filter: true,
+                                show: true
+                            }
+                        },
+                        createdAt: {
+                            isVisible: {
+                                edit: false,
+                                list: false,
+                                filter: true,
+                                show: true
+                            }
+                        },
+                        updatedAt: {
+                            isVisible: {
+                                edit: false,
+                                list: false,
+                                filter: true,
+                                show: true
+                            }
+                        },
+                        publishOn: {
+                            type: 'datetime'
+                        },
+                        reminders: {
+                            type: 'datetime',
+                            isVisible: {
+                                edit: true,
+                                filter: false,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        targets: {
+                            components: {
+                                edit: Components.NoticeTargets,
+                                new: Components.NoticeTargets,
+                                show: Components.NoticeTargets
+                            },
+                            isVisible: {
+                                edit: true,
+                                filter: false,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        published: {
+                            isVisible: {
+                                edit: false,
+                                filter: true,
+                                show: true,
+                                list: false
+                            }
+                        }
+                    },
+                    actions: {
+                        new: {
+                            before: [
+                                beforeHookWrapper(preFillNoticeDefaultFields)
+                            ]
+                        },
+                        edit: {
+                            before: [beforeHookWrapper(createdByGuard)]
+                        },
+                        list: {
+                            before: [beforeHookWrapper(createdByGuardView)]
+                        },
+                        search: {
+                            before: [beforeHookWrapper(createdByGuardView)]
+                        },
+                        delete: { efore: [beforeHookWrapper(createdByGuard)] },
+                        bulkDelete: { isVisible: false }
+                    }
+                }
+            },
+            {
+                resource: Result,
+                options: {
+                    properties: {
+                        published: {
+                            isVisible: {
+                                edit: false,
+                                filter: true,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        entries: {
+                            isVisible: {
+                                edit: true,
+                                filter: true,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        createdBy: {
+                            isVisible: {
+                                edit: false,
+                                filter: false,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        createdAt: {
+                            isVisible: {
+                                edit: false,
+                                list: false,
+                                filter: false,
+                                show: true
+                            }
+                        },
+                        updatedAt: {
+                            isVisible: {
+                                edit: false,
+                                list: false,
+                                filter: false,
+                                show: true
+                            }
+                        }
+                    },
+                    actions: {
+                        bulkDelete: { isVisible: false },
+                        new: {
+                            before: [
+                                beforeHookWrapper(preFillResultDefaultFields)
+                            ]
+                        },
+                        edit: {
+                            before: [beforeHookWrapper(createdByGuard)]
                         }
                     }
                 }
