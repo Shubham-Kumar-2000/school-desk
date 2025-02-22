@@ -1,5 +1,6 @@
 require('dotenv').config({ path: '.env' });
-require('./models/index').connect();
+const sequelize = require('./models/init');
+
 const { Kafka } = require('kafkajs');
 const { KAFKA_TOPICS } = require('./config/constants');
 const {
@@ -10,13 +11,14 @@ const {
 
 const kafka = new Kafka({
     clientId: 'my-consumer',
-    brokers: [process.env.KAFKA_URL] // Change to your broker address
+    brokers: [process.env.KAFKA_URL]
 });
 
 const consumer = kafka.consumer({ groupId: 'my-group' });
 
 async function run() {
     try {
+        await sequelize.sync({ alter: true });
         await consumer.connect();
         await consumer.subscribe({
             topics: Object.values(KAFKA_TOPICS),

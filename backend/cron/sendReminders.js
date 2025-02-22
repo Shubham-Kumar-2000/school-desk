@@ -9,8 +9,7 @@ const Result = require('../models/result');
 
 // const plansController = require('../controllers/plansController');
 require('dotenv').config({ path: '.env' });
-require('../models/index').connect();
-async function posts() {
+exports.send = async () => {
     console.log('Updating plans' + new Date());
     try {
         console.log('Updating plans' + new Date());
@@ -23,7 +22,7 @@ async function posts() {
     } catch (err) {
         console.log(err);
     }
-}
+};
 
 const getNotices = async () => {
     const interval = new Date(Date.now() - SCHEDULER_INTERVAL);
@@ -71,13 +70,3 @@ const processList = (list) => {
         };
     });
 };
-
-posts()
-    .then(() => {
-        console.log('Plans Update done' + new Date());
-        process.exit();
-    })
-    .catch((e) => {
-        console.log(e);
-        process.exit(1);
-    });

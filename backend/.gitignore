@@ -2,3 +2,4 @@ node_modules/
 backend/.env
 .env
 .adminjs
+firebase-secret.json
