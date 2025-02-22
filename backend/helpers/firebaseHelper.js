@@ -1,7 +1,8 @@
 const admin = require('firebase-admin');
 
 // Initialize Firebase Admin (ensure serviceAccountKey.json is correctly set up)
-const serviceAccount = require('../config/serviceAccountKey.json');
+// eslint-disable-next-line node/no-unpublished-require
+const serviceAccount = require('../firebase-secret.json');
 
 if (!admin.apps.length) {
     admin.initializeApp({

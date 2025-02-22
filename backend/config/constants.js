@@ -92,5 +92,5 @@ module.exports = {
         result: 'result'
     },
 
-    SCHEDULER_INTERVAL: 2 * 60 * 1000
+    SCHEDULER_INTERVAL: 30 * 1000
 };
