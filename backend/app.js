@@ -22,7 +22,6 @@ const questionsRouter = require('./routes/question');
 const getAdminRouter = require('./routes/admin2');
 
 const getApp = async () => {
-    // await Mongoose.connect();
     await sequelize.sync({ alter: true });
     app.use('/admin', await getAdminRouter());
     app.use(express.json({ limit: '50mb' }));

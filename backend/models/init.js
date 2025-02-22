@@ -1,10 +1,15 @@
 const { Sequelize } = require('sequelize');
 
-const sequelize = new Sequelize('school_desk', 'postgres', 'shubham', {
-    host: 'localhost',
-    dialect: 'postgres' // Or your PostgreSQL connection details
-    // ... other Sequelize options
-});
+const sequelize = new Sequelize(
+    process.env.PG_DATABASE,
+    process.env.PG_USER,
+    process.env.PG_PASSWORD,
+    {
+        host: process.env.PG_HOST,
+        dialect: 'postgres' // Or your PostgreSQL connection details
+        // ... other Sequelize options
+    }
+);
 
 // Test the connection (optional)
 sequelize
