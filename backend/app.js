@@ -19,7 +19,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const usersRouter = require('./routes/guardian');
 const noticeRouter = require('./routes/notice');
 const questionsRouter = require('./routes/question');
-const getAdminRouter = require('./routes/admin2');
+const getAdminRouter = require('./routes/admin');
 
 const getApp = async () => {
     await sequelize.sync({ alter: true });
