@@ -1,6 +1,7 @@
 const { SUPPORTED_LANGUAGES } = require('../config/constants');
 const { askAi } = require('../helpers/aiHelper');
 const { CustomError } = require('../helpers/errorHelper');
+const { processQueryResponse } = require('../helpers/kafkaHelper');
 const { translate } = require('../helpers/translationHelper');
 const AdminTeacher = require('../models/adminTeachers');
 const Class = require('../models/class');
@@ -158,6 +159,11 @@ exports.answerQuestionForTeacher = async (request, response, context) => {
     }
 
     await question.save();
+    processQueryResponse(
+        [question.askedByStudent],
+        'Query Answered : ',
+        text
+    ).catch(console.error);
     return {
         notice: {
             message: 'Successfully answered question.',
