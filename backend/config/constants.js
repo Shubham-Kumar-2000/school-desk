@@ -35,12 +35,14 @@ module.exports = {
         English: {
             key: 'English',
             bcp_code: 'en-US',
-            indic_trans_code: 'en'
+            indic_trans_code: 'en',
+            reminderText: 'Reminder'
         },
         Hindi: {
             key: 'Hindi',
             bcp_code: 'hi-IN',
-            indic_trans_code: 'hi'
+            indic_trans_code: 'hi',
+            reminderText: 'अनुस्मारक'
         }
     },
 
@@ -81,5 +83,14 @@ module.exports = {
     GENDERS: {
         MALE: 'MALE',
         FEMALE: 'FEMALE'
-    }
+    },
+
+    KAFKA_TOPICS: {
+        query_response: 'query-response',
+        notice: 'notice',
+        reminder: 'reminder',
+        result: 'result'
+    },
+
+    SCHEDULER_INTERVAL: 2 * 60 * 1000
 };
