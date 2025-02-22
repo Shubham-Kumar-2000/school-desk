@@ -18,5 +18,6 @@ router.post(
 );
 
 router.get('/me', tokenHelper.validate, userController.profile);
+router.post('/settings', tokenHelper.validate, userController.updateMe);
 
 module.exports = router;

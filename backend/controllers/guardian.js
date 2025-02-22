@@ -144,3 +144,16 @@ exports.validateGuardianIndentityNumber = (request) => {
 
     return request;
 };
+
+exports.updateMe = async (req, res, next) => {
+    try {
+        const user = await Guardian.updateUser(req.user._id, req.body, {
+            status: configConsts.USER_STATUS.ACTIVE
+        });
+        if (!user) throw new CustomError('Invalid Guardian');
+        res.status(200).json({ err: false, user });
+    } catch (e) {
+        console.log(e);
+        next(e);
+    }
+};

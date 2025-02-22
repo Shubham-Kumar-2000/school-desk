@@ -1,4 +1,5 @@
 const { Joi } = require('express-validation');
+const { SUPPORTED_LANGUAGES } = require('../config/constants');
 
 exports.login = {
     body: Joi.object({
@@ -25,3 +26,15 @@ exports.idQuery = {
         id: Joi.string().min(5).required()
     })
 };
+
+exports.updateGuardian = Joi.object({
+    body: Joi.object({
+        notificationSettings: Joi.object({
+            sms: Joi.boolean().required(),
+            pushToken: Joi.string()
+        }).required(),
+        preferredLanguage: Joi.string()
+            .valid(...Object.keys(SUPPORTED_LANGUAGES))
+            .required()
+    })
+});
