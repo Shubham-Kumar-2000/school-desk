@@ -19,5 +19,11 @@ exports.preFillResultDefaultFields = (request, context) => {
 };
 
 exports.fetchRecentResults = (studentId) => {
-    return Result.find({ student: studentId }).sort({ createdAt: -1 }).limit(5);
+    return Result.findAll({
+        where: {
+            studentId: studentId // Assuming studentId is the foreign key column
+        },
+        order: [['createdAt', 'DESC']], // Order by createdAt descending
+        limit: 5
+    });
 };

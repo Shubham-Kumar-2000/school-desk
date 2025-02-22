@@ -1,6 +1,7 @@
 /* eslint-disable no-process-exit */
 // process.env.cron=true
 
+const { Op } = require('sequelize');
 const { SCHEDULER_INTERVAL } = require('../config/constants');
 const { produceMessages } = require('../helpers/kafkaHelper');
 const Notice = require('../models/notice');
@@ -26,24 +27,38 @@ async function posts() {
 
 const getNotices = async () => {
     const interval = new Date(Date.now() - SCHEDULER_INTERVAL);
-    const notices = await Notice.find({
-        published: false,
-        publishOn: { $gte: interval, $lte: new Date() }
+    const notices = await Notice.findAll({
+        where: {
+            published: false,
+            publishOn: {
+                [Op.gte]: interval,
+                [Op.lte]: new Date()
+            }
+        }
     });
     return processList(notices);
 };
 const getReminders = async () => {
     const interval = new Date(Date.now() - SCHEDULER_INTERVAL);
-    const reminders = await Notice.find({
-        reminders: { $elemMatch: { $gte: interval, $lte: new Date() } }
+    const reminders = await Notice.findAll({
+        where: {
+            reminders: {
+                [Op.overlap]: [interval, new Date()]
+            }
+        }
     });
     return processList(reminders);
 };
 const getResults = async () => {
     const interval = new Date(Date.now() - SCHEDULER_INTERVAL);
-    const results = await Result.find({
-        published: false,
-        publishOn: { $gte: interval, $lte: new Date() }
+    const results = await Result.findAll({
+        where: {
+            published: false,
+            publishOn: {
+                [Op.gte]: interval,
+                [Op.lte]: new Date()
+            }
+        }
     });
     return processList(results);
 };

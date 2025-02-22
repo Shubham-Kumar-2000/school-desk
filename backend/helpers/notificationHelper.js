@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const {
     TARGET_AUDIENCE_TYPES,
     SUPPORTED_LANGUAGES,
@@ -12,10 +13,18 @@ const { sendMsg } = require('./smsHelper');
 const { translate } = require('./translationHelper');
 
 exports.processNotice = async (value, isReminder) => {
-    const notice = await Notice.findById(value)
-        .populate('student')
-        .populate('students')
-        .exec();
+    const notice = await Notice.findByPk(value, {
+        include: [
+            {
+                model: Student,
+                as: 'student'
+            },
+            {
+                model: Student,
+                as: 'students'
+            }
+        ]
+    });
     switch (notice.targets.audienceType) {
         case TARGET_AUDIENCE_TYPES.STUDENT:
             await processStudent(notice, notice.targets.student, isReminder);
@@ -42,7 +51,13 @@ exports.processNotice = async (value, isReminder) => {
 };
 
 const processStudent = async (notice, student, isReminder) => {
-    const guardian = await Guardian.findOne({ students: student.id });
+    const guardian = await Guardian.findOne({
+        where: {
+            students: {
+                [Op.contains]: [student._id]
+            }
+        }
+    });
     const message = await getMessage(notice, guardian, isReminder);
     if (guardian.notificationSettings.sms) {
         await sendMsg(
@@ -67,7 +82,7 @@ const processClass = async (notice, classId, isReminder) => {
 };
 
 const processAll = async (notice, isReminder) => {
-    const students = await Student.find();
+    const students = await Student.findAll();
     for (const student of students) {
         await processStudent(notice, student, isReminder);
     }
@@ -104,7 +119,7 @@ const getMessage = async (notice, guardian, isReminder) => {
 };
 
 exports.processResult = async (value) => {
-    const result = await Result.findById(value);
+    const result = await Result.findByPk(value);
     const resultRows = result.entries.map(
         (r) => `Obtained ${r.marks} out of ${r.totalMarks} in ${r.subject}`
     );
@@ -141,13 +156,19 @@ const calculatePercentage = (resultRows) => {
 
 exports.processQueryResponse = async (value) => {
     const data = JSON.parse(value);
-    const students = await Student.find({ _id: { $in: data.studentIds } });
+    const students = await Student.findAll({ _id: { $in: data.studentIds } });
     for (const student of students)
         await sendResponse(student, data.title, data.description);
 };
 
 const sendResponse = async (student, title, description) => {
-    const guardian = await Guardian.findOne({ students: student.id });
+    const guardian = await Guardian.findOne({
+        where: {
+            students: {
+                [Op.contains]: [student._id]
+            }
+        }
+    });
     const finalTitle = await translate(
         title,
         SUPPORTED_LANGUAGES.English.key,

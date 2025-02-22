@@ -1,75 +1,77 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('./init');
+const AdminTeacher = require('./adminTeachers');
 const configConsts = require('../config/constants');
 
-const Schema = mongoose.Schema;
-
-const scheduleSchema = new Schema(
+const Class = sequelize.define(
+    'Class',
     {
-        day: { type: String, required: true, enum: configConsts.DAYS_OF_WEEK },
-        startTime: {
-            type: String,
-            match: /^(0[1-9]|1[0-2]):([0-5][0-9])\s(AM|PM)$/,
-            required: true
+        _id: {
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            primaryKey: true
         },
-        endTime: {
-            type: String,
-            match: /^(0[1-9]|1[0-2]):([0-5][0-9])\s(AM|PM)$/,
-            required: true
+        name: {
+            type: DataTypes.STRING,
+            allowNull: false
         },
-        subject: { type: String, required: true },
-        teacher: {
-            type: mongoose.Types.ObjectId,
-            ref: 'AdminTeacher',
-            required: true
+        batch: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        schedule: {
+            // Schedule as a JSONB array
+            type: DataTypes.JSONB,
+            allowNull: false,
+            validate: {
+                validateSchedule(value) {
+                    const days = {};
+                    if (!Array.isArray(value)) {
+                        throw new Error('Schedule must be an array');
+                    }
+
+                    for (const schedule of value) {
+                        if (
+                            !schedule.day ||
+                            !schedule.startTime ||
+                            !schedule.endTime ||
+                            !schedule.subject
+                        ) {
+                            throw new Error(
+                                'Schedule items must have day, startTime, endTime and subject'
+                            );
+                        }
+                        if (days[schedule.day]) {
+                            throw new Error('Duplicate day in schedule');
+                        }
+                        days[schedule.day] = true;
+                        if (!configConsts.DAYS_OF_WEEK.includes(schedule.day)) {
+                            throw new Error('Invalid day of the week');
+                        }
+                        if (
+                            !/^(0[1-9]|1[0-2]):([0-5][0-9])\s(AM|PM)$/.test(
+                                schedule.startTime
+                            ) ||
+                            !/^(0[1-9]|1[0-2]):([0-5][0-9])\s(AM|PM)$/.test(
+                                schedule.endTime
+                            )
+                        ) {
+                            throw new Error('Invalid time format');
+                        }
+                    }
+                }
+            }
         }
     },
-    { timestamps: false }
-);
-
-const classSchema = new Schema(
     {
-        name: { type: String, required: true },
-        batch: { type: Number, required: true },
-        classTeacher: {
-            type: mongoose.Types.ObjectId,
-            ref: 'AdminTeacher',
-            required: true
-        },
-        schedule: { type: [scheduleSchema], required: true }
-    },
-    { timestamps: true }
+        timestamps: true
+    }
 );
 
-const validateSchedule = (schedules) => {
-    const days = {};
-    for (const schedule of schedules) {
-        if (days[schedule.day]) {
-            return false;
-        }
-        days[schedule.day] = true;
-    }
-    return true;
-};
-
-classSchema.pre('save', function (next) {
-    if (!this.isModified('schedule')) {
-        return next();
-    }
-    if (!validateSchedule(this.schedule)) {
-        next(new Error('Duplicate day in schedule'));
-    }
-    next();
+Class.belongsTo(AdminTeacher, {
+    as: 'classTeacher',
+    foreignKey: 'classTeacherId'
 });
+AdminTeacher.hasMany(Class, { as: 'classes', foreignKey: 'classTeacherId' });
 
-classSchema.pre('updateOne', function (next) {
-    if (!this._update.schedule) {
-        return next();
-    }
-    if (!validateSchedule(this._update.schedule)) {
-        next(new Error('Duplicate day in schedule'));
-    }
-    next();
-});
-
-const Class = mongoose.model('Class', classSchema);
 module.exports = Class;

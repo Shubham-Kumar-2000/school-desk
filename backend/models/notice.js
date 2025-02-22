@@ -1,98 +1,138 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('./init');
 const { NOTICE_TYPES, TARGET_AUDIENCE_TYPES } = require('../config/constants');
-const Schema = mongoose.Schema;
+const AdminTeacher = require('./adminTeachers');
+// const Result = require('./result');
 
-const targetSchema = new Schema({
-    audienceType: {
-        type: String,
-        required: true,
-        enum: Object.keys(TARGET_AUDIENCE_TYPES)
-    },
-    student: {
-        type: mongoose.Types.ObjectId,
-        ref: 'Student',
-        required: false
-    },
-    students: {
-        type: [mongoose.Types.ObjectId],
-        ref: 'Student',
-        required: false
-    },
-    class: {
-        type: mongoose.Types.ObjectId,
-        ref: 'Class',
-        required: false
-    },
-    acknowdegementRequired: {
-        type: Boolean,
-        required: true,
-        default: false
-    },
-    acknowledgedBy: {
-        type: [mongoose.Types.ObjectId],
-        ref: 'Student',
-        required: false
-    },
-    acknowledged: {
-        type: Boolean,
-        required: true,
-        default: false
-    }
-});
-
-const noticeSchema = new Schema(
+const Notice = sequelize.define(
+    'Notice',
     {
-        title: { type: String, required: true },
-        description: { type: String, required: true },
-
+        _id: {
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            primaryKey: true
+        },
+        title: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        description: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
         noticeType: {
-            type: String,
-            required: true,
-            enum: Object.keys(NOTICE_TYPES)
+            type: DataTypes.ENUM(...Object.keys(NOTICE_TYPES)),
+            allowNull: false
         },
         published: {
-            type: Boolean,
-            required: true,
-            default: false
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false
         },
         publishOn: {
-            type: Date,
-            required: true
+            type: DataTypes.DATE,
+            allowNull: false
         },
-
-        targets: {
-            type: targetSchema,
-            required: true
-        },
-
         reminders: {
-            type: [Date],
-            required: false,
-            default: []
-        },
-
-        createdBy: {
-            type: mongoose.Types.ObjectId,
-            ref: 'AdminTeacher',
-            required: true
+            type: DataTypes.ARRAY(DataTypes.DATE),
+            allowNull: true,
+            defaultValue: []
         },
         translationsCache: {
-            type: Object,
-            required: true,
-            default: {}
-        },
-        resultAttached: {
-            type: mongoose.Types.ObjectId,
-            ref: 'Result',
-            required: false
+            type: DataTypes.JSONB,
+            allowNull: false,
+            defaultValue: {}
         },
         img: {
-            type: String,
-            required: false
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        targets: {
+            // Embedded target as JSONB
+            type: DataTypes.JSONB,
+            allowNull: false,
+            validate: {
+                isValidTarget(value) {
+                    if (!value || typeof value !== 'object') {
+                        throw new Error('Target must be a valid JSON object.');
+                    }
+
+                    const allowedAudienceTypes = Object.keys(
+                        TARGET_AUDIENCE_TYPES
+                    );
+
+                    if (!allowedAudienceTypes.includes(value.audienceType)) {
+                        throw new Error('Invalid audience type.');
+                    }
+
+                    if (value.student && typeof value.student !== 'string') {
+                        // Assuming student ID is a string
+                        throw new Error('Student must be a valid ID.');
+                    }
+
+                    if (
+                        value.students &&
+                        (!Array.isArray(value.students) ||
+                            value.students.some((id) => typeof id !== 'string'))
+                    ) {
+                        throw new Error(
+                            'Students must be an array of valid IDs.'
+                        );
+                    }
+
+                    if (value.class && typeof value.class !== 'string') {
+                        // Assuming class ID is a string
+                        throw new Error('Class must be a valid ID.');
+                    }
+
+                    if (typeof value.acknowledgementRequired !== 'boolean') {
+                        throw new Error(
+                            'Acknowledgement required must be a boolean.'
+                        );
+                    }
+
+                    if (!Object.keys(value).includes('acknowledgedBy')) {
+                        value.acknowledgedBy = [];
+                    }
+
+                    if (
+                        value.acknowledgedBy &&
+                        (!Array.isArray(value.acknowledgedBy) ||
+                            value.acknowledgedBy.some(
+                                (id) => typeof id !== 'string'
+                            ))
+                    ) {
+                        throw new Error(
+                            'Acknowledged by must be an array of valid IDs.'
+                        );
+                    }
+                    if (!Object.keys(value).includes('acknowledged')) {
+                        value.acknowledged = false;
+                    }
+
+                    if (typeof value.acknowledged !== 'boolean') {
+                        throw new Error('Acknowledged must be a boolean.');
+                    }
+                }
+            }
         }
     },
-    { timestamps: true }
+    {
+        timestamps: true
+    }
 );
 
-const Notice = mongoose.model('Notice', noticeSchema);
+Notice.belongsTo(AdminTeacher, {
+    as: 'createdByData',
+    foreignKey: 'createdBy'
+});
+AdminTeacher.hasMany(Notice, { as: 'notices', foreignKey: 'createdBy' });
+
+// Notice.belongsTo(Result, {
+//     as: 'resultAttached',
+//     foreignKey: 'resultAttachedId',
+//     allowNull: true
+// });
+// Result.hasMany(Notice, { as: 'notices', foreignKey: 'resultAttachedId' });
+
 module.exports = Notice;

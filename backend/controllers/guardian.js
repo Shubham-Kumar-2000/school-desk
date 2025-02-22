@@ -6,7 +6,10 @@ const { CustomError } = require('../helpers/errorHelper');
 const OtpUsage = require('../models/otpUsage');
 const Otp = require('../models/otp');
 const { sendOtp } = require('../helpers/smsHelper');
-const { indentityValidation } = require('../validations/indentity');
+const { identityValidation } = require('../validations/identity');
+const Student = require('../models/student');
+const { Op } = require('sequelize');
+const Class = require('../models/class');
 
 exports.generateOtp = async (req, res, next) => {
     try {
@@ -74,11 +77,21 @@ exports.logInByPhone = async (req, res, next) => {
 
 exports.profile = async (req, res, next) => {
     try {
-        const user = await Guardian.getUserById(req.user._id).populate(
-            'students'
-        );
+        const user = await Guardian.getUserById(req.user._id);
 
         if (!user) throw new CustomError('Invalid Token');
+
+        const students = await Student.findAll({
+            where: {
+                _id: {
+                    [Op.in]: user.students
+                },
+                status: configConsts.USER_STATUS.ACTIVE
+            },
+            include: [{ model: Class, as: 'currentClassData' }]
+        });
+        user.students = students;
+        if (students.length === 0) throw new CustomError('No students found');
         res.status(200).json({ err: false, user });
     } catch (e) {
         console.log(e);
@@ -114,11 +127,11 @@ exports.defaultActiveGuardiansOnly = (request) => {
 
 exports.studentIdToStudent = (request) => {
     const { query = {} } = request;
-    if (query['filters.studentId']) {
-        query['filters.students'] = query['filters.studentId'];
-    }
+    // if (query['filters.studentId']) {
+    //     query['filters.students'] = query['filters.studentId'];
+    // }
 
-    delete query['filters.studentId'];
+    // delete query['filters.studentId'];
 
     const newQuery = {
         ...query
@@ -129,18 +142,18 @@ exports.studentIdToStudent = (request) => {
     return request;
 };
 
-exports.validateGuardianIndentityNumber = (request) => {
+exports.validateGuardianIdentityNumber = (request) => {
     const { payload = {} } = request;
-    const indentityNumber = payload.indentityNumber;
+    const identityNumber = payload.identityNumber;
 
-    if (!indentityNumber) {
-        throw new CustomError('Indentity number is required');
+    if (!identityNumber) {
+        throw new CustomError('Identity number is required');
     }
-    const indentityValidationObject = {
-        [payload.indentityType]: payload.indentityNumber
+    const identityValidationObject = {
+        [payload.identityType]: payload.identityNumber
     };
-    const { error } = indentityValidation.validate(indentityValidationObject);
-    if (error) throw new CustomError('Invalid indentity number');
+    const { error } = identityValidation.validate(identityValidationObject);
+    if (error) throw new CustomError('Invalid identity number');
 
     return request;
 };

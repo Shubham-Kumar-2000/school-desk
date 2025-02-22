@@ -1,35 +1,58 @@
-const mongoose = require('mongoose');
+// db.js (Sequelize initialization) - No changes needed
+
+// otp-usage-model.js
+const { DataTypes } = require('sequelize');
+const sequelize = require('./init');
 const md5 = require('md5');
-const Schema = mongoose.Schema;
 
-const otpUsageSchema = new Schema(
+const OtpUsage = sequelize.define(
+    'OtpUsage',
     {
-        identifier: { type: String },
-        used: { type: Number, default: 0 },
-        timeDelta: { type: Number }
-    },
-    { timestamps: true }
-);
-otpUsageSchema.index({ identifier: 1, timeDelta: 1 });
-
-otpUsageSchema.statics.getUsage = (identifier) => {
-    const now = Date.now();
-    return OtpUsage.findOneAndUpdate(
-        {
-            identifier: md5(identifier + '-salt'),
-            timeDelta: now - (now % (1000 * 60 * 5))
+        identifier: {
+            type: DataTypes.STRING,
+            allowNull: false
         },
-        {
-            $inc: {
-                used: 1
-            }
+        used: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0
         },
-        {
-            new: true,
-            upsert: true
+        timeDelta: {
+            type: DataTypes.BIGINT, // Use BIGINT for large numbers (timestamps)
+            allowNull: false
         }
-    );
+    },
+    {
+        timestamps: true,
+        indexes: [
+            {
+                fields: ['identifier', 'timeDelta']
+            }
+        ]
+    }
+);
+
+OtpUsage.getUsage = async function (identifier) {
+    const now = Date.now();
+    const timeDelta = now - (now % (1000 * 60 * 5));
+    const hashedIdentifier = md5(identifier + '-salt');
+
+    const [otpUsage] = await this.findOrCreate({
+        where: {
+            identifier: hashedIdentifier,
+            timeDelta: timeDelta
+        },
+        defaults: {
+            identifier: hashedIdentifier, // Ensure this is set on create
+            timeDelta: timeDelta,
+            used: 0 // Initialize to 0 if new record is created
+        }
+    });
+
+    await otpUsage.increment('used'); // Increment the 'used' count efficiently
+    await otpUsage.reload(); // To get the updated value
+
+    return otpUsage;
 };
 
-const OtpUsage = mongoose.model('otp-usage', otpUsageSchema);
 module.exports = OtpUsage;

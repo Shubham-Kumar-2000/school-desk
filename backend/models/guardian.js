@@ -1,62 +1,78 @@
-const mongoose = require('mongoose');
+const { DataTypes, Op } = require('sequelize');
+const sequelize = require('./init');
 const configConsts = require('../config/constants');
-const addressSchema = require('./address');
+const { addressSequlizeSchema } = require('./address');
 
-const Schema = mongoose.Schema;
-
-const notificationSettingsSchema = new Schema({
-    sms: { type: Boolean, required: true, default: true },
-    pushToken: { type: String, required: false }
-});
-
-const guardianSchema = new Schema(
+const Guardian = sequelize.define(
+    'Guardian',
     {
-        name: { type: String, required: true },
-        email: { type: String, required: false },
-        phone: { type: String, match: /^\+91[6-9]\d{9}$/, required: true },
-        students: {
-            type: [mongoose.Types.ObjectId],
-            ref: 'Student',
-            required: false
+        _id: {
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            primaryKey: true
         },
-        dob: { type: Date, required: true },
+        name: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        email: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        phone: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            validate: {
+                is: /^\+91[6-9]\d{9}$/
+            }
+        },
+        dob: {
+            type: DataTypes.DATE,
+            allowNull: false
+        },
         preferredLanguage: {
-            type: String,
-            enum: Object.keys(configConsts.SUPPORTED_LANGUAGES),
-            required: true
+            type: DataTypes.ENUM(
+                ...Object.keys(configConsts.SUPPORTED_LANGUAGES)
+            ),
+            allowNull: false
         },
-
         notificationSettings: {
-            type: notificationSettingsSchema,
-            required: true,
-            default: {
+            type: DataTypes.JSONB, // Store notification settings as JSONB
+            allowNull: false,
+            defaultValue: {
                 sms: true
             }
         },
-
         status: {
-            type: String,
-            enum: Object.values(configConsts.USER_STATUS),
-            required: true,
-            default: configConsts.USER_STATUS.ACTIVE
+            type: DataTypes.ENUM(...Object.values(configConsts.USER_STATUS)),
+            allowNull: false,
+            defaultValue: configConsts.USER_STATUS.ACTIVE
         },
-
-        indentityType: {
-            type: String,
-            required: true,
-            enum: Object.keys(configConsts.IDENTITY_TYPES)
+        identityType: {
+            type: DataTypes.ENUM(...Object.keys(configConsts.IDENTITY_TYPES)),
+            allowNull: false
         },
-        indentityNumber: { type: String, required: true },
-
-        address: { type: addressSchema, required: true }
+        identityNumber: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        address: addressSequlizeSchema,
+        students: {
+            type: DataTypes.ARRAY(DataTypes.UUID),
+            allowNull: false,
+            defaultValue: []
+        }
     },
-    { timestamps: true }
+    {
+        timestamps: true
+    }
 );
 
-guardianSchema.statics.checkIfUserExists = function (username, kind) {
+// Static methods (using class methods in Sequelize v6+)
+Guardian.checkIfUserExists = async function (username, kind) {
     const where = {
         status: {
-            $nin: [
+            [Op.notIn]: [
                 configConsts.USER_STATUS.BLOCKED,
                 configConsts.USER_STATUS.DELETED
             ]
@@ -64,52 +80,50 @@ guardianSchema.statics.checkIfUserExists = function (username, kind) {
     };
 
     if (!kind) {
-        where['email'] = username;
+        where.email = username;
     } else {
         where[kind] = username;
     }
-    return Guardian.findOne(where);
+    return this.findOne({ where });
 };
 
-guardianSchema.statics.getUserById = (userId) => {
-    return Guardian.findOne({
-        _id: userId
+Guardian.getUserById = async function (userId) {
+    const guardian = await this.findOne({ where: { _id: userId } });
+
+    if (guardian) {
+        return guardian.get({ plain: true });
+    }
+    return null;
+};
+
+Guardian.getValidUserById = async function (userId) {
+    const guardian = await this.findOne({
+        where: { _id: userId, status: configConsts.USER_STATUS.ACTIVE }
     });
+    if (guardian) {
+        return guardian.get({ plain: true }); // Convert to plain object if found
+    }
+    return null;
 };
 
-guardianSchema.statics.getValidUserById = (userId) => {
-    return Guardian.findOne({
-        _id: userId,
-        status: configConsts.USER_STATUS.ACTIVE
-    });
-};
-
-guardianSchema.statics.updateUser = (userId, update, query = {}) => {
-    return Guardian.findOneAndUpdate(
-        {
+Guardian.updateUser = async function (userId, update, query = {}) {
+    return this.update(update, {
+        where: {
             _id: userId,
             ...query
         },
-        {
-            $set: update
-        },
-        { new: true }
-    );
+        returning: true // For getting the updated instance
+    }).then((result) => result[1][0]); // Get the updated instance
 };
 
-guardianSchema.statics.removeUser = (userId) => {
-    return Guardian.findOneAndUpdate(
+Guardian.removeUser = async function (userId) {
+    return this.update(
+        { status: configConsts.USER_STATUS.BLOCKED },
         {
-            _id: userId
-        },
-        {
-            $set: {
-                status: configConsts.USER_STATUS.BLOCKED
-            }
-        },
-        { new: true }
-    );
+            where: { _id: userId },
+            returning: true
+        }
+    ).then((result) => result[1][0]);
 };
 
-const Guardian = mongoose.model('Guardian', guardianSchema);
 module.exports = Guardian;

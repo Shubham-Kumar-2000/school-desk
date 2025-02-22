@@ -1,4 +1,3 @@
-const { default: mongoose } = require('mongoose');
 const {
     TARGET_AUDIENCE_TYPES,
     NOTIF_PAGINATION_LIMIT,
@@ -7,6 +6,8 @@ const {
 const { CustomError } = require('../helpers/errorHelper');
 const Notice = require('../models/notice');
 const { translate } = require('../helpers/translationHelper');
+const { Op } = require('sequelize');
+const AdminTeacher = require('../models/adminTeachers');
 
 exports.preFillNoticeDefaultFields = (request, context) => {
     const { payload = {} } = request;
@@ -71,36 +72,27 @@ const translateNotices = (notices, language) => {
     });
 };
 
-exports.fetchRecentNotices = async (studentId, classId) => {
-    const filter = {
-        $or: [
-            {
-                'targets.audienceType': TARGET_AUDIENCE_TYPES.ALL
-            },
-            {
-                'targets.audienceType': TARGET_AUDIENCE_TYPES.STUDENT,
-                'targets.student': new mongoose.Types.ObjectId(studentId)
-            },
-            {
-                'targets.audienceType': TARGET_AUDIENCE_TYPES.GROUP_OF_STUDENTS,
-                'targets.students': new mongoose.Types.ObjectId(studentId)
-            },
-            {
-                'targets.audienceType': TARGET_AUDIENCE_TYPES.CLASS,
-                'targets.class': new mongoose.Types.ObjectId(classId)
-            }
-        ]
+const getMyNoticeFilter = (studentId, classId) => {
+    return {
+        where: {
+            '$targets.audienceType$': TARGET_AUDIENCE_TYPES.STUDENT,
+            '$targets.studentId$': studentId // Use the foreign key name
+        },
+        order: [['publishOn', 'DESC']]
     };
+};
 
-    const notices = await Notice.find(filter)
-        .sort({ publishOn: -1 })
-        .limit(5)
-        .populate('createdBy');
+exports.fetchRecentNotices = async (studentId, classId) => {
+    const filter = getMyNoticeFilter(studentId, classId);
+    filter.limit = 5;
+    filter.include = [{ model: AdminTeacher, as: 'createdByData' }];
+
+    const notices = await Notice.findAll(filter);
     return notices;
 };
 
 exports.fetchRecentNoticeId = async (noticeId) => {
-    return Notice.findById(noticeId);
+    return Notice.findByPk(noticeId);
 };
 
 exports.getMyNotifications = async (req, res, next) => {
@@ -111,38 +103,18 @@ exports.getMyNotifications = async (req, res, next) => {
             0
         );
 
-        const filter = {
-            $or: [
-                {
-                    'targets.audienceType': TARGET_AUDIENCE_TYPES.ALL
-                },
-                {
-                    'targets.audienceType': TARGET_AUDIENCE_TYPES.STUDENT,
-                    'targets.student': new mongoose.Types.ObjectId(student._id)
-                },
-                {
-                    'targets.audienceType':
-                        TARGET_AUDIENCE_TYPES.GROUP_OF_STUDENTS,
-                    'targets.students': new mongoose.Types.ObjectId(student._id)
-                },
-                {
-                    'targets.audienceType': TARGET_AUDIENCE_TYPES.CLASS,
-                    'targets.class': student.currentClass
-                }
-            ],
-            published: true
-        };
+        const filter = getMyNoticeFilter(student._id, student.currentClass);
+        filter.where.published = true;
 
         if (req.query.noticeType) {
-            filter.noticeType = req.query.noticeType;
+            filter.where.noticeType = req.query.noticeType;
         }
 
-        const notices = await Notice.find(filter)
-            .sort({ publishOn: -1 })
-            .skip(skip)
-            .limit(NOTIF_PAGINATION_LIMIT + 1)
-            .populate('createdBy')
-            .populate('resultAttached');
+        filter.offset = skip;
+        filter.limit = NOTIF_PAGINATION_LIMIT + 1;
+        filter.include = [{ model: AdminTeacher, as: 'createdByData' }];
+
+        const notices = await Notice.findAll(filter);
 
         res.status(200).json({
             err: false,
@@ -164,44 +136,26 @@ exports.acknowledgeNotice = async (req, res, next) => {
     try {
         const student = req.student;
 
-        const filter = {
-            $or: [
-                {
-                    'targets.audienceType': TARGET_AUDIENCE_TYPES.ALL
-                },
-                {
-                    'targets.audienceType': TARGET_AUDIENCE_TYPES.STUDENT,
-                    'targets.student': new mongoose.Types.ObjectId(student._id)
-                },
-                {
-                    'targets.audienceType':
-                        TARGET_AUDIENCE_TYPES.GROUP_OF_STUDENTS,
-                    'targets.students': new mongoose.Types.ObjectId(student._id)
-                },
-                {
-                    'targets.audienceType': TARGET_AUDIENCE_TYPES.CLASS,
-                    'targets.class': student.currentClass
-                }
-            ],
-            published: true,
-            'targets.acknowdegementRequired': true,
-            _id: new mongoose.Types.ObjectId(req.params.id)
-        };
+        const filter = getMyNoticeFilter(student._id, student.currentClass);
+        // published: true,
+        // 'targets.acknowdegementRequired': true,
+        // _id: new mongoose.Types.ObjectId(req.params.id)
+        // };
 
-        const notice = await Notice.findOneAndUpdate(
-            filter,
-            {
-                $addToSet: {
-                    'targets.acknowledgedBy': new mongoose.Types.ObjectId(
-                        student._id
-                    )
-                }
-            },
-            { new: true }
-        );
+        filter.where.published = true;
+        filter.where['$targets.acknowledgementRequired$'] = true;
+        filter.where._id = req.params.id;
+
+        delete filter.order;
+
+        const notice = await Notice.findOne(filter);
 
         if (!notice) {
             throw new CustomError('Invalid Notice ID', 404);
+        }
+
+        if (!notice.targets.acknowledgedBy.includes(student._id)) {
+            notice.targets.acknowledgedBy.push(student._id);
         }
 
         if (

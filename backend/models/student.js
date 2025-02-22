@@ -1,39 +1,63 @@
-const mongoose = require('mongoose');
-const addressSchema = require('./address');
+const { DataTypes } = require('sequelize');
+const sequelize = require('./init');
+const Class = require('./class'); // Import Class model
 const { USER_STATUS, GENDERS } = require('../config/constants');
+const { addressSequlizeSchema } = require('./address');
 
-const Schema = mongoose.Schema;
-
-const studentSchema = new Schema(
+const Student = sequelize.define(
+    'Student',
     {
-        name: { type: String, required: true },
-        rollNo: { type: Number, required: true },
-        currentClass: {
-            type: mongoose.Types.ObjectId,
-            ref: 'Class',
-            required: true
+        _id: {
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            primaryKey: true
+        },
+        name: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        rollNo: {
+            type: DataTypes.INTEGER,
+            allowNull: false
         },
         status: {
-            type: String,
-            enum: Object.values(USER_STATUS),
-            required: true,
-            default: USER_STATUS.ACTIVE
+            type: DataTypes.ENUM(...Object.values(USER_STATUS)),
+            allowNull: false,
+            defaultValue: USER_STATUS.ACTIVE
         },
-
-        avatar: { type: String, default: null },
-
-        address: { type: addressSchema, required: true },
-
-        dob: { type: Date, required: true },
+        avatar: {
+            type: DataTypes.STRING,
+            allowNull: true, // Changed to allowNull: true for default: null
+            defaultValue: null
+        },
+        dob: {
+            type: DataTypes.DATE,
+            allowNull: false
+        },
         gender: {
-            type: String,
-            required: true,
-            default: GENDERS.MALE,
-            enum: Object.values(GENDERS)
-        }
+            type: DataTypes.ENUM(...Object.values(GENDERS)),
+            allowNull: false,
+            defaultValue: GENDERS.MALE
+        },
+        address: addressSequlizeSchema
     },
-    { timestamps: true }
+    {
+        timestamps: true,
+        indexes: [
+            // Add a unique index for class and rollNo
+            {
+                unique: true,
+                fields: ['currentClass', 'rollNo']
+            }
+        ]
+    }
 );
 
-const Student = mongoose.model('Student', studentSchema);
+// Define relationships
+Student.belongsTo(Class, {
+    as: 'currentClassData',
+    foreignKey: 'currentClass'
+});
+Class.hasMany(Student, { as: 'students', foreignKey: 'currentClass' });
+
 module.exports = Student;

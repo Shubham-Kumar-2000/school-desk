@@ -2,40 +2,50 @@
 /* eslint-disable node/no-missing-import */
 /* eslint-disable node/no-unsupported-features/es-syntax */
 process.env['NODE_ENV'] = 'production';
+require('../models/image');
+const session = require('express-session');
+const connectPgSimple = require('connect-pg-simple');
+const PgStore = connectPgSimple(session);
 
-const Guardian = require('../models/guardian');
 const Class = require('../models/class');
-const Student = require('../models/student');
-const Notice = require('../models/notice');
-const Result = require('../models/result');
 const AdminTeacher = require('../models/adminTeachers');
-const MongoStore = require('connect-mongo');
-const mongoose = require('mongoose');
+
 const {
-    deleteGuardian,
+    ADMIN_AUTH_SESSION_EXPIRY_HOURS,
+    DAYS_OF_WEEK,
+    TARGET_AUDIENCE_TYPES
+} = require('../config/constants');
+const { defaultCurrentBatchClassesOnly } = require('../controllers/class');
+const { defaultActiveStudentsOnly } = require('../controllers/student');
+const Student = require('../models/student');
+const { addressAdminJsSchema } = require('../models/address');
+const {
     defaultActiveGuardiansOnly,
     studentIdToStudent,
-    validateGuardianIndentityNumber
+    deleteGuardian,
+    validateGuardianIdentityNumber
 } = require('../controllers/guardian');
+const { isArray } = require('lodash');
+const Guardian = require('../models/guardian');
+const Notice = require('../models/notice');
 const {
     preFillNoticeDefaultFields,
     createdByGuard,
     createdByGuardView
 } = require('../controllers/notice');
+const Result = require('../models/result');
 const { preFillResultDefaultFields } = require('../controllers/result');
-const { ADMIN_AUTH_SESSION_EXPIRY_HOURS } = require('../config/constants');
-const { defaultCurrentBatchClassesOnly } = require('../controllers/class');
-const { defaultActiveStudentsOnly } = require('../controllers/student');
 const Question = require('../models/question');
 const {
     getQuestionForTeacher,
     answerQuestionForTeacher
 } = require('../controllers/question');
+const { types } = require('pg');
 
 const getAdminRouter = async () => {
     const AdminJS = (await import('adminjs')).default;
     const AdminJSExpress = (await import('@adminjs/express')).default;
-    const AdminJSMongoose = await import('@adminjs/mongoose');
+    const AdminJSSequelize = await import('@adminjs/sequelize');
     const { files } = await import('../admin/uploadImage.mjs');
     const { componentLoader, Components } = await import(
         '../admin/component-loader.mjs'
@@ -45,126 +55,13 @@ const getAdminRouter = async () => {
     );
 
     AdminJS.registerAdapter({
-        Resource: AdminJSMongoose.Resource,
-        Database: AdminJSMongoose.Database
+        Resource: AdminJSSequelize.Resource,
+        Database: AdminJSSequelize.Database
     });
 
     const admin = new AdminJS({
         rootPath: '/admin',
         resources: [
-            {
-                resource: Guardian,
-                options: {
-                    properties: {
-                        indentityType: {
-                            isVisible: {
-                                edit: true,
-                                filter: true,
-                                show: true,
-                                list: false
-                            }
-                        },
-                        indentityNumber: {
-                            isVisible: {
-                                edit: true,
-                                filter: true,
-                                show: true,
-                                list: false
-                            }
-                        },
-                        address: {
-                            isVisible: {
-                                edit: true,
-                                filter: false,
-                                show: true,
-                                list: false
-                            }
-                        },
-                        'address.createdAt': {
-                            isVisible: {
-                                edit: false,
-                                list: false,
-                                filter: true,
-                                show: true
-                            }
-                        },
-                        'address.updatedAt': {
-                            isVisible: {
-                                edit: false,
-                                list: false,
-                                filter: true,
-                                show: true
-                            }
-                        },
-                        createdAt: {
-                            isVisible: {
-                                edit: false,
-                                list: false,
-                                filter: false,
-                                show: true
-                            }
-                        },
-                        updatedAt: {
-                            isVisible: {
-                                edit: false,
-                                list: false,
-                                filter: false,
-                                show: true
-                            }
-                        },
-                        dob: {
-                            type: 'date'
-                        },
-                        notificationSettings: {
-                            isVisible: false
-                        },
-                        students: {
-                            isVisible: {
-                                edit: true,
-                                filter: true,
-                                show: true,
-                                list: false
-                            }
-                        },
-                        studentId: {
-                            type: 'reference',
-                            reference: 'Student',
-                            isVisible: {
-                                edit: false,
-                                filter: true,
-                                show: false,
-                                list: false
-                            }
-                        }
-                    },
-                    actions: {
-                        new: {
-                            before: [
-                                beforeHookWrapper(
-                                    validateGuardianIndentityNumber
-                                )
-                            ]
-                        },
-                        delete: {
-                            isVisible: true,
-                            handler: handlerWrapper(deleteGuardian)
-                        },
-                        bulkDelete: { isVisible: false },
-                        list: {
-                            before: [
-                                beforeHookWrapper(defaultActiveGuardiansOnly),
-                                beforeHookWrapper(studentIdToStudent)
-                            ]
-                        },
-                        search: {
-                            before: [
-                                beforeHookWrapper(defaultActiveGuardiansOnly),
-                                beforeHookWrapper(studentIdToStudent)
-                            ]
-                        }
-                    }
-                }
-            },
             {
                 resource: AdminTeacher,
                 options: {
@@ -204,19 +101,62 @@ const getAdminRouter = async () => {
                 options: {
                     properties: {
                         schedule: {
+                            type: 'mixed',
+                            isArray: true,
+                            isVisible: {
+                                edit: true,
+                                filter: false,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        'schedule.day': {
+                            type: 'string',
                             isVisible: {
                                 edit: true,
                                 filter: false,
                                 show: true,
                                 list: false
                             },
-                            properties: {
-                                startTime: {
-                                    type: 'time'
-                                },
-                                endTime: {
-                                    type: 'time'
-                                }
+                            availableValues: DAYS_OF_WEEK.map((day) => ({
+                                value: day
+                            }))
+                        },
+                        'schedule.subject': {
+                            type: 'string',
+                            isVisible: {
+                                edit: true,
+                                filter: false,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        'schedule.teacher': {
+                            type: 'reference',
+                            reference: 'admin_teachers',
+                            isVisible: {
+                                edit: true,
+                                filter: false,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        'schedule.startTime': {
+                            type: 'string',
+                            isVisible: {
+                                edit: true,
+                                filter: false,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        'schedule.endTime': {
+                            type: 'string',
+                            isVisible: {
+                                edit: true,
+                                filter: false,
+                                show: true,
+                                list: false
                             }
                         },
                         createdAt: {
@@ -260,6 +200,7 @@ const getAdminRouter = async () => {
                 resource: Student,
                 options: {
                     properties: {
+                        ...addressAdminJsSchema,
                         createdAt: {
                             isVisible: {
                                 edit: false,
@@ -278,30 +219,6 @@ const getAdminRouter = async () => {
                         },
                         dob: {
                             type: 'date'
-                        },
-                        address: {
-                            isVisible: {
-                                edit: true,
-                                filter: false,
-                                show: true,
-                                list: false
-                            }
-                        },
-                        'address.createdAt': {
-                            isVisible: {
-                                edit: false,
-                                list: false,
-                                filter: true,
-                                show: true
-                            }
-                        },
-                        'address.updatedAt': {
-                            isVisible: {
-                                edit: false,
-                                list: false,
-                                filter: true,
-                                show: true
-                            }
                         },
                         avatar: {
                             isVisible: {
@@ -329,11 +246,97 @@ const getAdminRouter = async () => {
                 }
             },
             {
+                resource: Guardian,
+                options: {
+                    properties: {
+                        identityType: {
+                            isVisible: {
+                                edit: true,
+                                filter: true,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        identityNumber: {
+                            isVisible: {
+                                edit: true,
+                                filter: true,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        createdAt: {
+                            isVisible: {
+                                edit: false,
+                                list: false,
+                                filter: false,
+                                show: true
+                            }
+                        },
+                        updatedAt: {
+                            isVisible: {
+                                edit: false,
+                                list: false,
+                                filter: false,
+                                show: true
+                            }
+                        },
+                        dob: {
+                            type: 'date'
+                        },
+                        notificationSettings: {
+                            isVisible: false
+                        },
+                        students: {
+                            type: 'reference',
+                            reference: 'Students',
+                            isArray: true,
+                            isVisible: {
+                                edit: true,
+                                filter: true,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        ...addressAdminJsSchema
+                    },
+                    actions: {
+                        new: {
+                            before: [
+                                beforeHookWrapper(
+                                    validateGuardianIdentityNumber
+                                )
+                            ]
+                        },
+                        delete: {
+                            isVisible: true,
+                            handler: handlerWrapper(deleteGuardian)
+                        },
+                        bulkDelete: { isVisible: false },
+                        list: {
+                            before: [
+                                beforeHookWrapper(defaultActiveGuardiansOnly),
+                                beforeHookWrapper(studentIdToStudent)
+                            ]
+                        },
+                        search: {
+                            before: [
+                                beforeHookWrapper(defaultActiveGuardiansOnly),
+                                beforeHookWrapper(studentIdToStudent)
+                            ]
+                        }
+                    }
+                }
+            },
+            {
                 resource: Notice,
                 options: {
                     properties: {
                         description: {
-                            type: 'richtext'
+                            type: 'textarea',
+                            props: {
+                                rows: 10
+                            }
                         },
                         createdBy: {
                             isVisible: {
@@ -372,6 +375,7 @@ const getAdminRouter = async () => {
                             }
                         },
                         targets: {
+                            type: 'mixed',
                             components: {
                                 edit: Components.NoticeTargets,
                                 new: Components.NoticeTargets,
@@ -382,24 +386,74 @@ const getAdminRouter = async () => {
                                 filter: false,
                                 show: true,
                                 list: false
+                            }
+                        },
+                        'targets.audienceType': {
+                            type: 'string',
+                            isVisible: {
+                                edit: true,
+                                filter: false,
+                                show: true,
+                                list: false
                             },
-                            properties: {
-                                acknowledged: {
-                                    isVisible: {
-                                        edit: false,
-                                        filter: true,
-                                        show: true,
-                                        list: false
-                                    }
-                                },
-                                acknowledgedBy: {
-                                    isVisible: {
-                                        edit: false,
-                                        filter: false,
-                                        show: true,
-                                        list: false
-                                    }
-                                }
+                            availableValues: Object.keys(
+                                TARGET_AUDIENCE_TYPES
+                            ).map((key) => ({
+                                value: TARGET_AUDIENCE_TYPES[key]
+                            }))
+                        },
+                        'targets.student': {
+                            type: 'reference',
+                            reference: 'Students',
+                            isVisible: {
+                                edit: true,
+                                filter: false,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        'targets.students': {
+                            type: 'reference',
+                            reference: 'Students',
+                            isArray: true,
+                            isVisible: {
+                                edit: true,
+                                filter: false,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        'targets.class': {
+                            type: 'reference',
+                            reference: 'Classes',
+                            isVisible: {
+                                edit: true,
+                                filter: false,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        'targets.acknowledgementRequired': {
+                            type: 'boolean'
+                        },
+                        'targets.acknowledgedBy': {
+                            type: 'reference',
+                            reference: 'Students',
+                            isArray: true,
+                            isVisible: {
+                                edit: false,
+                                filter: false,
+                                show: true,
+                                list: false
+                            }
+                        },
+                        'targets.acknowledged': {
+                            type: 'boolean',
+                            isVisible: {
+                                edit: false,
+                                filter: false,
+                                show: true,
+                                list: false
                             }
                         },
                         published: {
@@ -429,6 +483,11 @@ const getAdminRouter = async () => {
                             ]
                         },
                         edit: {
+                            isVisible: (context) => {
+                                const { record } = context;
+
+                                return record?.params?.published == false;
+                            },
                             before: [beforeHookWrapper(createdByGuard)]
                         },
                         list: {
@@ -437,7 +496,14 @@ const getAdminRouter = async () => {
                         search: {
                             before: [beforeHookWrapper(createdByGuardView)]
                         },
-                        delete: { efore: [beforeHookWrapper(createdByGuard)] },
+                        delete: {
+                            before: [beforeHookWrapper(createdByGuard)],
+                            isVisible: (context) => {
+                                const { record } = context;
+
+                                return record?.params?.published == false;
+                            }
+                        },
                         bulkDelete: { isVisible: false }
                     }
                 }
@@ -455,12 +521,23 @@ const getAdminRouter = async () => {
                             }
                         },
                         entries: {
+                            type: 'mixed',
                             isVisible: {
                                 edit: true,
                                 filter: true,
                                 show: true,
                                 list: false
-                            }
+                            },
+                            isArray: true
+                        },
+                        'entries.subject': {
+                            type: 'string'
+                        },
+                        'entries.marks': {
+                            type: 'number'
+                        },
+                        'entries.totalMarks': {
+                            type: 'number'
                         },
                         createdBy: {
                             isVisible: {
@@ -495,7 +572,20 @@ const getAdminRouter = async () => {
                             ]
                         },
                         edit: {
+                            isVisible: (context) => {
+                                const { record } = context;
+
+                                return record?.params?.published == false;
+                            },
                             before: [beforeHookWrapper(createdByGuard)]
+                        },
+                        delete: {
+                            before: [beforeHookWrapper(createdByGuard)],
+                            isVisible: (context) => {
+                                const { record } = context;
+
+                                return record?.params?.published == false;
+                            }
                         }
                     }
                 }
@@ -507,8 +597,21 @@ const getAdminRouter = async () => {
                         question: {
                             type: 'textarea'
                         },
+                        answers: {
+                            type: 'mixed',
+                            isVisible: {
+                                edit: true,
+                                filter: true,
+                                show: true,
+                                list: false
+                            },
+                            isArray: true
+                        },
                         'answers.text': {
                             type: 'textarea'
+                        },
+                        'answer.answeredByAi': {
+                            type: 'boolean'
                         },
                         requiredHumanIntervention: {
                             isVisible: {
@@ -585,10 +688,11 @@ const getAdminRouter = async () => {
         },
         null,
         {
-            store: MongoStore.create({
-                client: mongoose.connection.client,
-                dbName: 'school-desk-session',
-                ttl: ADMIN_AUTH_SESSION_EXPIRY_HOURS
+            store: new PgStore({
+                conString:
+                    'postgres://postgres:shubham@localhost:5432/school-desk-session',
+                ttl: ADMIN_AUTH_SESSION_EXPIRY_HOURS,
+                createTableIfMissing: true
             }),
             resave: true,
             saveUninitialized: true,

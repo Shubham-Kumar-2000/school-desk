@@ -2,6 +2,7 @@ const { SUPPORTED_LANGUAGES } = require('../config/constants');
 const { askAi } = require('../helpers/aiHelper');
 const { CustomError } = require('../helpers/errorHelper');
 const { translate } = require('../helpers/translationHelper');
+const AdminTeacher = require('../models/adminTeachers');
 const Class = require('../models/class');
 const Notice = require('../models/notice');
 const Question = require('../models/question');
@@ -38,13 +39,13 @@ exports.askQuestion = async (req, res, next) => {
         let askedTo = null;
 
         if (noticeId) {
-            const notice = await Notice.findById(noticeId);
+            const notice = await Notice.findByPk(noticeId);
             if (!notice) {
                 throw new CustomError('Invalid Notice ID');
             }
             askedTo = notice.createdBy;
         } else {
-            const currentClass = await Class.findById(student.currentClass);
+            const currentClass = await Class.findByPk(student.currentClass);
             askedTo = currentClass.classTeacher;
         }
 
@@ -130,16 +131,31 @@ exports.answerQuestionForTeacher = async (request, response, context) => {
         throw new CustomError('Question already answered');
     }
 
-    await Question.findByIdAndUpdate(record.params._id, {
-        $push: {
-            answers: {
-                text: text,
-                answeredByAi: false,
-                answeredBy: currentAdmin._id
-            }
-        },
-        humanAnswered: true
-    });
+    const question = await Question.findByPk(record.params._id);
+
+    if (!question) {
+        throw new CustomError('Question not found');
+    }
+
+    question.humanAnswered = true;
+
+    if (Array.isArray(question.answers)) {
+        question.answers.push({
+            text: text,
+            answeredByAi: false,
+            answeredBy: currentAdmin._id
+        });
+    } else {
+        const currentAnswers = JSON.parse(question.answers || '[]');
+        currentAnswers.push({
+            text,
+            answeredByAi: false,
+            answeredBy: currentAdmin._id
+        });
+        question.answers = JSON.stringify(currentAnswers);
+    }
+
+    await question.save();
     return {
         notice: {
             message: 'Successfully answered question.',
@@ -152,19 +168,26 @@ exports.requiredHumanIntervention = async (req, res, next) => {
     try {
         const questionId = req.params.id;
 
-        const question = await Question.findOneAndUpdate(
-            {
+        const question = await Question.findOne({
+            where: {
                 _id: questionId,
                 askedBy: req.guardian._id,
                 humanAnswered: false
             },
-            { $set: { requiredHumanIntervention: true } },
-            { new: true }
-        ).populate('askedTo');
+            include: [
+                {
+                    model: AdminTeacher,
+                    as: 'askedTo'
+                }
+            ]
+        });
 
         if (!question) {
             throw new CustomError('Invalid Question ID');
         }
+
+        question.requiredHumanIntervention = true;
+        await question.save();
 
         res.status(200).json({ err: false, question });
     } catch (e) {

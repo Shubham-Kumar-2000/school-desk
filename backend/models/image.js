@@ -1,13 +1,22 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const { DataTypes } = require('sequelize');
+const sequelize = require('./init');
 
-const imageSchema = new Schema(
+const Image = sequelize.define(
+    'Image',
     {
-        key: { type: String },
-        filePath: { type: String, default: '' }
+        key: {
+            type: DataTypes.STRING,
+            allowNull: true // You might want to make this required
+        },
+        filePath: {
+            type: DataTypes.STRING,
+            defaultValue: ''
+        }
     },
-    { timestamps: true }
+    {
+        timestamps: true, // Adds createdAt and updatedAt automatically
+        tableName: 'Images' // Optional: If you want the table name to be 'Images'
+    }
 );
 
-const Image = mongoose.model('Images', imageSchema);
 module.exports = Image;

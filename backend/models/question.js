@@ -1,48 +1,67 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const { DataTypes } = require('sequelize');
+const sequelize = require('./init');
+const Guardian = require('./guardian');
+const Student = require('./student');
+const AdminTeacher = require('./adminTeachers');
 
-const answerSchema = new Schema(
+const Question = sequelize.define(
+    'Question',
     {
-        text: { type: String, required: true },
-        answeredByAi: { type: Boolean, required: true },
-        answeredBy: {
-            type: mongoose.Types.ObjectId,
-            ref: 'AdminTeacher',
-            required: false
+        question: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        answers: {
+            type: DataTypes.JSONB, // Store answers as a JSONB array
+            allowNull: false,
+            defaultValue: [],
+            validate: {
+                isValidAnswers(value) {
+                    if (!Array.isArray(value)) {
+                        throw new Error('Answers must be an array.');
+                    }
+                    value.forEach((answer) => {
+                        if (!answer.text || typeof answer.text !== 'string') {
+                            throw new Error(
+                                'Text is required and must be a string.'
+                            );
+                        }
+                        if (typeof answer.answeredByAi !== 'boolean') {
+                            throw new Error(
+                                'answeredByAi is required and must be a boolean.'
+                            );
+                        }
+                    });
+                }
+            }
+        },
+        requiredHumanIntervention: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false
+        },
+        humanAnswered: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false
         }
     },
-    { timestamps: false }
-);
-
-const questionSchema = new Schema(
     {
-        question: { type: String, required: true },
-        answers: { type: [answerSchema], required: true, default: [] },
-        askedBy: {
-            type: mongoose.Types.ObjectId,
-            ref: 'Guardian',
-            required: true
-        },
-        askedByStudent: {
-            type: mongoose.Types.ObjectId,
-            ref: 'Student',
-            required: true
-        },
-        askedTo: {
-            type: mongoose.Types.ObjectId,
-            ref: 'AdminTeacher',
-            required: true
-        },
-
-        requiredHumanIntervention: {
-            type: Boolean,
-            required: true,
-            default: false
-        },
-        humanAnswered: { type: Boolean, required: true, default: false }
-    },
-    { timestamps: true }
+        timestamps: true
+    }
 );
 
-const Question = mongoose.model('Question', questionSchema);
+// Define Relationships
+Question.belongsTo(Guardian, { as: 'askedByData', foreignKey: 'askedBy' });
+Guardian.hasMany(Question, { as: 'questions', foreignKey: 'askedBy' });
+
+Question.belongsTo(Student, {
+    as: 'askedByStudentData',
+    foreignKey: 'askedByStudent'
+});
+Student.hasMany(Question, { as: 'questions', foreignKey: 'askedByStudent' });
+
+Question.belongsTo(AdminTeacher, { as: 'askedToData', foreignKey: 'askedTo' });
+AdminTeacher.hasMany(Question, { as: 'questions', foreignKey: 'askedTo' });
+
 module.exports = Question;

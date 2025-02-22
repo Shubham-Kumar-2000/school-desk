@@ -1,59 +1,62 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
+const sequelize = require('./init');
 
-const Schema = mongoose.Schema;
-
-const adminTeacherSchema = new Schema(
+const AdminTeacher = sequelize.define(
+    'AdminTeacher',
     {
+        _id: {
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            primaryKey: true
+        },
         name: {
-            type: String,
-            required: true
+            type: DataTypes.STRING,
+            allowNull: false
         },
         email: {
-            type: String,
-            lowercase: true,
-            unique: true,
-            required: true
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true
         },
         password: {
-            type: String,
-            required: true
+            type: DataTypes.STRING,
+            allowNull: false
         }
     },
-    { timestamps: true }
+    {
+        tableName: 'admin_teachers', // Customize table name if needed
+        timestamps: true, // Adds createdAt and updatedAt automatically
+        hooks: {
+            beforeCreate: async (admin, options) => {
+                const saltRounds = Number(process.env.SALT_ROUNDS) || 12;
+                admin.password = await bcrypt.hash(admin.password, saltRounds);
+            },
+            beforeUpdate: async (admin, options) => {
+                if (admin.changed('password')) {
+                    // Check if password was changed
+                    const saltRounds = Number(process.env.SALT_ROUNDS) || 12;
+                    admin.password = await bcrypt.hash(
+                        admin.password,
+                        saltRounds
+                    );
+                }
+            }
+        }
+    }
 );
 
-adminTeacherSchema.pre('save', function (next) {
-    const user = this;
-    const saltRounds = Number(process.env.SALT_ROUNDS) || 12;
-
-    if (!user.isModified('password')) {
-        return next();
-    }
-    bcrypt.hash(user.password, saltRounds, function (err, hash) {
-        if (err) {
-            return next(err);
-        }
-        user.password = hash;
-        next();
-    });
-});
-
-adminTeacherSchema.methods.comparePassword = function (candidatePassword) {
+AdminTeacher.prototype.comparePassword = async function (candidatePassword) {
     return bcrypt.compare(candidatePassword, this.password);
 };
 
-adminTeacherSchema.statics.checkIfUserExists = async function (
-    email,
-    password
-) {
-    const admin = await AdminTeacher.findOne({ email });
+AdminTeacher.checkIfUserExists = async function (email, password) {
+    const admin = await AdminTeacher.findOne({ where: { email } });
     if (!admin) {
         return null;
     }
     if (!(await admin.comparePassword(password))) return null;
-    return admin.toJSON();
+    return admin.get({ plain: true });
 };
 
-const AdminTeacher = mongoose.model('AdminTeacher', adminTeacherSchema);
 module.exports = AdminTeacher;

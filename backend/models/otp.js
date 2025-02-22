@@ -1,40 +1,69 @@
-const mongoose = require('mongoose');
+// db.js (Sequelize initialization) - No changes needed
+
+// otp-model.js
+const { DataTypes, Op } = require('sequelize');
+const sequelize = require('./init');
 const md5 = require('md5');
 const otpGenerator = require('otp-generator');
-const Schema = mongoose.Schema;
 
-const otpSchema = new Schema(
+const Otp = sequelize.define(
+    'Otp',
     {
-        identifier: { type: String },
-        otp: { type: String },
-        validTill: { type: Date }
-    },
-    { timestamps: true }
-);
-otpSchema.index({ identifier: 1, timeDelta: 1 });
-otpSchema.statics.validateOtp = async (identifier, otp) => {
-    const otpDoc = await Otp.findOne({
-        identifier: md5(identifier + '-otp'),
-        validTill: {
-            $gt: new Date()
+        identifier: {
+            type: DataTypes.STRING,
+            allowNull: false
         },
-        otp
+        otp: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        validTill: {
+            type: DataTypes.DATE,
+            allowNull: false
+        }
+    },
+    {
+        timestamps: true,
+        indexes: [
+            {
+                fields: ['identifier', 'createdAt'] // Index for identifier and createdAt (timeDelta equivalent)
+            }
+        ]
+    }
+);
+
+// Class methods (static methods in Sequelize)
+Otp.validateOtp = async function (identifier, otp) {
+    const hashedIdentifier = md5(identifier + '-otp');
+    const otpDoc = await this.findOne({
+        where: {
+            identifier: hashedIdentifier,
+            validTill: {
+                [Op.gt]: new Date() // Sequelize's greater than operator
+            },
+            otp
+        }
     });
+
     if (otpDoc) {
-        await Otp.deleteOne({ _id: otpDoc._id });
+        await this.destroy({ where: { id: otpDoc.id } }); // Use destroy for deleteOne equivalent
     }
     return otpDoc;
 };
 
-otpSchema.statics.getResendOtp = (identifier) => {
-    return Otp.findOne({
-        identifier: md5(identifier + '-otp'),
-        validTill: {
-            $gt: new Date()
+Otp.getResendOtp = async function (identifier) {
+    const hashedIdentifier = md5(identifier + '-otp');
+    return this.findOne({
+        where: {
+            identifier: hashedIdentifier,
+            validTill: {
+                [Op.gt]: new Date()
+            }
         }
     });
 };
-otpSchema.statics.createOtp = async (identifier) => {
+
+Otp.createOtp = async function (identifier) {
     const hashedIdentifier = md5(identifier + '-otp');
     const otp = otpGenerator.generate(6, {
         digits: true,
@@ -42,13 +71,14 @@ otpSchema.statics.createOtp = async (identifier) => {
         upperCaseAlphabets: false,
         specialChars: false
     });
-    await Otp.deleteMany({ identifier: hashedIdentifier });
-    await Otp.create({
+
+    await this.destroy({ where: { identifier: hashedIdentifier } }); // Delete existing OTPs
+    await this.create({
         identifier: hashedIdentifier,
         otp,
-        validTill: Date.now() + 1000 * 60 * 5
+        validTill: new Date(Date.now() + 1000 * 60 * 5) // Convert to Date object
     });
     return otp;
 };
-const Otp = mongoose.model('otp', otpSchema);
+
 module.exports = Otp;

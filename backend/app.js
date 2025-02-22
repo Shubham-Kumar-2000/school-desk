@@ -5,7 +5,7 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
 const { errorHandler } = require('./helpers/errorHelper');
-const Mongoose = require('./models/index');
+const sequelize = require('./models/init');
 const tokenHelper = require('./helpers/tokenHelper');
 const app = express();
 app.use(cors());
@@ -19,10 +19,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 const usersRouter = require('./routes/guardian');
 const noticeRouter = require('./routes/notice');
 const questionsRouter = require('./routes/question');
-const getAdminRouter = require('./routes/admin');
+const getAdminRouter = require('./routes/admin2');
 
 const getApp = async () => {
-    await Mongoose.connect();
+    // await Mongoose.connect();
+    await sequelize.sync({ alter: true });
     app.use('/admin', await getAdminRouter());
     app.use(express.json({ limit: '50mb' }));
     app.use(express.urlencoded({ extended: false }));

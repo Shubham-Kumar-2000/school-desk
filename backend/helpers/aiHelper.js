@@ -101,6 +101,7 @@ exports.askAi = async (question, student, guardian, noticeId) => {
     Please answer the below question in plain text no formatting:
     ${question}
     `;
+    console.log(prompt);
 
     const response = await model.generateContent([prompt]);
     return response.response.text();

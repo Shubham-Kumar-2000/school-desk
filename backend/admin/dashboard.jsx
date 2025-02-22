@@ -85,7 +85,7 @@ const Dashboard = () => {
       >
         <Card width={1} m="lg">
           <Text textAlign="center">
-            <img src="https://high-on-wheels-public.s3.ap-south-1.amazonaws.com/logo/logo.png" />
+            <img src="https://cs-school-desk.s3.amazonaws.com/1/1.png" />
             <H5>Have more advanced use cases?</H5>
             <Text>
               We are here to provide you a software to solve all your use cases

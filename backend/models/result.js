@@ -1,58 +1,95 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('./init');
+const Student = require('./student');
+const Class = require('./class');
+const AdminTeacher = require('./adminTeachers');
+const { CustomError } = require('../helpers/errorHelper');
 
-const Schema = mongoose.Schema;
-
-const resultRowSchema = new Schema(
+const Result = sequelize.define(
+    'Result',
     {
-        subject: { type: String, required: true },
-        marks: { type: Number, required: true },
-        totalMarks: { type: Number, required: true, default: 100 }
-    },
-    { timestamps: false }
-);
-
-const resultSchema = new Schema(
-    {
+        _id: {
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            primaryKey: true
+        },
         examName: {
-            type: String,
-            required: true
-        },
-        student: {
-            type: mongoose.Types.ObjectId,
-            ref: 'Student',
-            required: true
-        },
-        currentClass: {
-            type: mongoose.Types.ObjectId,
-            ref: 'Class',
-            required: true
+            type: DataTypes.STRING,
+            allowNull: false
         },
         rank: {
-            type: Number,
-            required: false
+            type: DataTypes.INTEGER, // Or FLOAT
+            allowNull: true
         },
         published: {
-            type: Boolean,
-            required: true,
-            default: false
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false
         },
         publishOn: {
-            type: Date,
-            required: true
+            type: DataTypes.DATE,
+            allowNull: false
         },
         entries: {
-            type: [resultRowSchema],
-            required: true,
-            default: []
-        },
-        createdBy: {
-            type: mongoose.Types.ObjectId,
-            ref: 'AdminTeacher',
-            required: true
+            type: DataTypes.JSONB, // Store entries as JSONB array
+            allowNull: false,
+            defaultValue: [],
+            validate: {
+                isValidEntries(value) {
+                    if (!Array.isArray(value)) {
+                        throw new CustomError('Entries must be an array.');
+                    }
+                    value.forEach((entry) => {
+                        console.log(entry);
+                        if (
+                            !entry.subject ||
+                            typeof entry.subject !== 'string'
+                        ) {
+                            throw new CustomError(
+                                'Subject is required and must be a string.'
+                            );
+                        }
+                        if (
+                            typeof entry.marks !== 'number' &&
+                            Number.isNaN(entry.marks)
+                        ) {
+                            throw new CustomError(
+                                'Marks is required and must be a number.'
+                            );
+                        } else {
+                            entry.marks = Number(entry.marks);
+                        }
+                        if (
+                            typeof entry.totalMarks !== 'number' &&
+                            Number.isNaN(entry.totalMarks)
+                        ) {
+                            throw new CustomError(
+                                'Total Marks is required and must be a number.'
+                            );
+                        } else {
+                            entry.totalMarks = Number(entry.totalMarks);
+                        }
+                    });
+                }
+            }
         }
     },
-    { timestamps: true }
+    {
+        timestamps: true
+    }
 );
 
-const Result = mongoose.model('Result', resultSchema);
+// Define Relationships
+Result.belongsTo(Student, { as: 'studentData', foreignKey: 'student' });
+Student.hasMany(Result, { as: 'results', foreignKey: 'student' });
+
+Result.belongsTo(Class, { as: 'currentClassData', foreignKey: 'currentClass' });
+Class.hasMany(Result, { as: 'results', foreignKey: 'currentClass' });
+
+Result.belongsTo(AdminTeacher, {
+    as: 'createdByData',
+    foreignKey: 'createdBy'
+});
+AdminTeacher.hasMany(Result, { as: 'results', foreignKey: 'createdBy' });
+
 module.exports = Result;
