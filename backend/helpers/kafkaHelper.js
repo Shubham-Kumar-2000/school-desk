@@ -35,3 +35,27 @@ exports.produceMessages = async (messages) => {
     console.log('Messages sent');
     await producer.disconnect();
 };
+
+exports.processQueryResponse = async (studentIds, title, description) => {
+    await producer.connect();
+    console.log('Producer connected');
+
+    const data = {
+        studentIds,
+        title,
+        description
+    };
+
+    await producer.send({
+        topic: KAFKA_TOPICS.query_response,
+        messages: [
+            {
+                key: null,
+                value: JSON.stringify(data)
+            }
+        ]
+    });
+
+    console.log('Messages sent');
+    await producer.disconnect();
+};
