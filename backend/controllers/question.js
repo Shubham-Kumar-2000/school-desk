@@ -54,7 +54,12 @@ exports.askQuestion = async (req, res, next) => {
             SUPPORTED_LANGUAGES.English.key
         );
 
-        const answer = await askAi(translatedQuestion, student, guardian);
+        const answer = await askAi(
+            translatedQuestion,
+            student,
+            guardian,
+            noticeId
+        );
 
         const newQuestion = await Question.create({
             question: translatedQuestion,
@@ -155,7 +160,7 @@ exports.requiredHumanIntervention = async (req, res, next) => {
             },
             { $set: { requiredHumanIntervention: true } },
             { new: true }
-        );
+        ).populate('askedTo');
 
         if (!question) {
             throw new CustomError('Invalid Question ID');
@@ -174,7 +179,9 @@ exports.myQuestions = async (req, res, next) => {
         const guardian = req.guardian;
         const questions = await Question.find({
             askedByStudent: student._id
-        }).sort({ updatedAt: -1 });
+        })
+            .sort({ updatedAt: -1 })
+            .populate('askedTo');
 
         res.status(200).json({
             err: false,
