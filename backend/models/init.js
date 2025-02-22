@@ -6,8 +6,8 @@ const sequelize = new Sequelize(
     process.env.PG_PASSWORD,
     {
         host: process.env.PG_HOST,
-        dialect: 'postgres' // Or your PostgreSQL connection details
-        // ... other Sequelize options
+        dialect: 'postgres',
+        logging: process.env.PG_SHOW_SQL == 'YES'
     }
 );
 
