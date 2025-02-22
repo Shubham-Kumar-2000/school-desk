@@ -593,6 +593,7 @@ const getAdminRouter = async () => {
             {
                 resource: Question,
                 options: {
+                    listProperties: ['question', 'askedBy', 'askedByStudent'],
                     properties: {
                         question: {
                             type: 'textarea'

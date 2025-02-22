@@ -2,6 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('./init');
 const AdminTeacher = require('./adminTeachers');
 const configConsts = require('../config/constants');
+const { CustomError } = require('../helpers/errorHelper');
 
 const Class = sequelize.define(
     'Class',
@@ -35,18 +36,19 @@ const Class = sequelize.define(
                             !schedule.day ||
                             !schedule.startTime ||
                             !schedule.endTime ||
-                            !schedule.subject
+                            !schedule.subject ||
+                            !schedule.teacher
                         ) {
-                            throw new Error(
-                                'Schedule items must have day, startTime, endTime and subject'
+                            throw new CustomError(
+                                'Schedule items must have day, startTime, endTime, teacher and subject'
                             );
                         }
                         if (days[schedule.day]) {
-                            throw new Error('Duplicate day in schedule');
+                            throw new CustomError('Duplicate day in schedule');
                         }
                         days[schedule.day] = true;
                         if (!configConsts.DAYS_OF_WEEK.includes(schedule.day)) {
-                            throw new Error('Invalid day of the week');
+                            throw new CustomError('Invalid day of the week');
                         }
                         if (
                             !/^(0[1-9]|1[0-2]):([0-5][0-9])\s(AM|PM)$/.test(
@@ -56,7 +58,7 @@ const Class = sequelize.define(
                                 schedule.endTime
                             )
                         ) {
-                            throw new Error('Invalid time format');
+                            throw new CustomError('Invalid time format');
                         }
                     }
                 }

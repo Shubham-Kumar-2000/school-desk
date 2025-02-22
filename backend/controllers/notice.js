@@ -7,7 +7,9 @@ const { CustomError } = require('../helpers/errorHelper');
 const Notice = require('../models/notice');
 const { translate } = require('../helpers/translationHelper');
 const { Op } = require('sequelize');
+const sequelize = require('../models/init');
 const AdminTeacher = require('../models/adminTeachers');
+const Result = require('../models/result');
 
 exports.preFillNoticeDefaultFields = (request, context) => {
     const { payload = {} } = request;
@@ -75,8 +77,20 @@ const translateNotices = (notices, language) => {
 const getMyNoticeFilter = (studentId, classId) => {
     return {
         where: {
-            '$targets.audienceType$': TARGET_AUDIENCE_TYPES.STUDENT,
-            '$targets.studentId$': studentId // Use the foreign key name
+            [Op.or]: [
+                sequelize.literal(
+                    `targets @> '{"audienceType": "${TARGET_AUDIENCE_TYPES.ALL}"}'`
+                ),
+                sequelize.literal(
+                    `targets @> '{"audienceType": "${TARGET_AUDIENCE_TYPES.STUDENT}", "student": "${studentId}"}'`
+                ),
+                sequelize.literal(
+                    `targets @> '{"audienceType": "${TARGET_AUDIENCE_TYPES.GROUP_OF_STUDENTS}"}' AND targets->'students' @> '["${studentId}"]'`
+                ),
+                sequelize.literal(
+                    `targets @> '{"audienceType": "${TARGET_AUDIENCE_TYPES.CLASS}", "class": "${classId}"}'`
+                )
+            ]
         },
         order: [['publishOn', 'DESC']]
     };
@@ -112,7 +126,13 @@ exports.getMyNotifications = async (req, res, next) => {
 
         filter.offset = skip;
         filter.limit = NOTIF_PAGINATION_LIMIT + 1;
-        filter.include = [{ model: AdminTeacher, as: 'createdByData' }];
+        filter.include = [
+            { model: AdminTeacher, as: 'createdByData' },
+            {
+                model: Result,
+                as: 'resultAttachedData'
+            }
+        ];
 
         const notices = await Notice.findAll(filter);
 
@@ -137,20 +157,15 @@ exports.acknowledgeNotice = async (req, res, next) => {
         const student = req.student;
 
         const filter = getMyNoticeFilter(student._id, student.currentClass);
-        // published: true,
-        // 'targets.acknowdegementRequired': true,
-        // _id: new mongoose.Types.ObjectId(req.params.id)
-        // };
 
         filter.where.published = true;
-        filter.where['$targets.acknowledgementRequired$'] = true;
         filter.where._id = req.params.id;
 
         delete filter.order;
 
         const notice = await Notice.findOne(filter);
 
-        if (!notice) {
+        if (!notice || !notice.targets.acknowledgementRequired) {
             throw new CustomError('Invalid Notice ID', 404);
         }
 
@@ -159,10 +174,10 @@ exports.acknowledgeNotice = async (req, res, next) => {
         }
 
         if (
-            (notice.targets.acknowledgedBy.length ===
-                notice.targets.students.length &&
-                notice.targets.audienceType ==
-                    TARGET_AUDIENCE_TYPES.GROUP_OF_STUDENTS) ||
+            (notice.targets.audienceType ==
+                TARGET_AUDIENCE_TYPES.GROUP_OF_STUDENTS &&
+                notice.targets.acknowledgedBy.length ===
+                    notice.targets.students.length) ||
             notice.targets.audienceType == TARGET_AUDIENCE_TYPES.STUDENT
         ) {
             notice.targets.acknowledged = true;

@@ -2,6 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('./init');
 const { NOTICE_TYPES, TARGET_AUDIENCE_TYPES } = require('../config/constants');
 const AdminTeacher = require('./adminTeachers');
+const Result = require('./result');
 // const Result = require('./result');
 
 const Notice = sequelize.define(
@@ -128,11 +129,15 @@ Notice.belongsTo(AdminTeacher, {
 });
 AdminTeacher.hasMany(Notice, { as: 'notices', foreignKey: 'createdBy' });
 
-// Notice.belongsTo(Result, {
-//     as: 'resultAttached',
-//     foreignKey: 'resultAttachedId',
-//     allowNull: true
-// });
-// Result.hasMany(Notice, { as: 'notices', foreignKey: 'resultAttachedId' });
+Notice.belongsTo(Result, {
+    as: 'resultAttachedData',
+    foreignKey: 'resultAttached',
+    allowNull: true
+});
+
+Result.hasOne(Notice, {
+    as: 'notice',
+    foreignKey: 'resultAttached'
+});
 
 module.exports = Notice;

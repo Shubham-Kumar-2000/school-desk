@@ -46,7 +46,7 @@ exports.askQuestion = async (req, res, next) => {
             askedTo = notice.createdBy;
         } else {
             const currentClass = await Class.findByPk(student.currentClass);
-            askedTo = currentClass.classTeacher;
+            askedTo = currentClass.classTeacherId;
         }
 
         const translatedQuestion = await translate(
@@ -140,11 +140,13 @@ exports.answerQuestionForTeacher = async (request, response, context) => {
     question.humanAnswered = true;
 
     if (Array.isArray(question.answers)) {
-        question.answers.push({
-            text: text,
-            answeredByAi: false,
-            answeredBy: currentAdmin._id
-        });
+        question.answers = [
+            ...question.answers.push({
+                text: text,
+                answeredByAi: false,
+                answeredBy: currentAdmin._id
+            })
+        ];
     } else {
         const currentAnswers = JSON.parse(question.answers || '[]');
         currentAnswers.push({
@@ -152,7 +154,7 @@ exports.answerQuestionForTeacher = async (request, response, context) => {
             answeredByAi: false,
             answeredBy: currentAdmin._id
         });
-        question.answers = JSON.stringify(currentAnswers);
+        question.answers = currentAnswers;
     }
 
     await question.save();
@@ -177,7 +179,7 @@ exports.requiredHumanIntervention = async (req, res, next) => {
             include: [
                 {
                     model: AdminTeacher,
-                    as: 'askedTo'
+                    as: 'askedToData'
                 }
             ]
         });
@@ -200,11 +202,13 @@ exports.myQuestions = async (req, res, next) => {
     try {
         const student = req.student;
         const guardian = req.guardian;
-        const questions = await Question.find({
-            askedByStudent: student._id
-        })
-            .sort({ updatedAt: -1 })
-            .populate('askedTo');
+        const questions = await Question.findAll({
+            where: {
+                askedByStudent: student._id
+            },
+            order: [['updatedAt', 'DESC']],
+            include: [{ model: AdminTeacher, as: 'askedToData' }]
+        });
 
         res.status(200).json({
             err: false,

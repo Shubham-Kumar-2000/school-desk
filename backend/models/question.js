@@ -7,6 +7,11 @@ const AdminTeacher = require('./adminTeachers');
 const Question = sequelize.define(
     'Question',
     {
+        _id: {
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            primaryKey: true
+        },
         question: {
             type: DataTypes.STRING,
             allowNull: false

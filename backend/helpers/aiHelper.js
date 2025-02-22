@@ -38,12 +38,12 @@ exports.askAi = async (question, student, guardian, noticeId) => {
     } in India,
     Take the below context into consideration and generate a response for the following question:
 
-    I am guardian ${guardian.name} of a student ${
+    A guardian ${guardian.name} of a student ${
         student.name
-    } who is studing in class ${currentClass.name} ${
-        currentClass.batch
+    } who is studying in class ${currentClass?.name} ${
+        currentClass?.batch
     } under class teacher ${
-        currentClass.classTeacher.name
+        currentClass?.classTeacher?.name
     } having below schedule :
 
     ${Object.keys(schedules)
@@ -55,36 +55,37 @@ exports.askAi = async (question, student, guardian, noticeId) => {
                 schedules[scheduleDay]
                     .map(
                         (schedule) =>
-                            schedule.subject +
+                            schedule?.subject +
                             ' from ' +
-                            schedule.startTime +
+                            schedule?.startTime +
                             ' with teacher ' +
-                            schedule.teacher.name
+                            schedule?.teacher?.name
                     )
                     .join(', ')
         )
         .join('\n')}
-    ${recentNotices.length > 0 ? 'Last few notifications: ' : ''}
+    
+    ${recentNotices?.length > 0 ? 'Last few notifications: ' : ''}
     ${recentNotices
-        .map((notice) => notice.title + '\n' + notice.description)
+        .map((notice) => notice?.title + '\n' + notice?.description)
         .join('\n\n')}
 
-    ${recentResults.length > 0 ? 'Last few Results:' : ''}
+    ${recentResults?.length > 0 ? 'Last few Results:' : ''}
     ${recentResults.map((result) => {
         return (
             'Result for exam ' +
-            result.examName +
+            result?.examName +
             ' with rank ' +
-            result.rank +
+            result?.rank +
             '\n' +
             result.entries.reduce((acc, entry) => {
                 return (
                     acc +
-                    entry.subject +
+                    entry?.subject +
                     ' : ' +
-                    entry.marks +
+                    entry?.marks +
                     '/' +
-                    entry.totalMarks +
+                    entry?.totalMarks +
                     '\n'
                 );
             }, '') +
@@ -93,16 +94,17 @@ exports.askAi = async (question, student, guardian, noticeId) => {
     })}${
         currentNotice
             ? '\n Current Notice : \n' +
-              currentNotice.title +
+              currentNotice?.title +
               '\n' +
-              currentNotice.description
+              currentNotice?.description +
+              '\n\n'
             : ''
-    } 
-    Please answer the below question in plain text no formatting:
-    ${question}
+    }Please answer the below question asked by the guardian in plain text no formatting
+    If the question is not answerable just "I couldn't answer that.".
+    Don't provide unnecessary details.
     `;
     console.log(prompt);
 
-    const response = await model.generateContent([prompt]);
+    const response = await model.generateContent([prompt, question]);
     return response.response.text();
 };

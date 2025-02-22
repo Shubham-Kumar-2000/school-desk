@@ -1,3 +1,5 @@
+const { CustomError } = require('../helpers/errorHelper');
+const AdminTeacher = require('../models/adminTeachers');
 const Class = require('../models/class');
 
 exports.defaultCurrentBatchClassesOnly = (request) => {
@@ -22,8 +24,30 @@ exports.defaultCurrentBatchClassesOnly = (request) => {
     return request;
 };
 
-exports.fetchClass = (classId) => {
-    return Class.findById(classId)
-        .populate('classTeacher')
-        .populate('schedule.teacher');
+exports.fetchClass = async (classId) => {
+    let cls = await Class.findByPk(classId, {
+        include: [{ model: AdminTeacher, as: 'classTeacher' }] // Assuming AdminTeacher is the class teacher model
+    });
+
+    if (!cls) {
+        throw new CustomError('Class not found.');
+    }
+    cls = cls.get({ plain: true });
+
+    const teachers = await Promise.all(
+        cls.schedule.map((s) => AdminTeacher.findByPk(s.teacher))
+    ).then((ts) =>
+        ts.reduce((acc, t) => {
+            if (!t) return acc;
+            acc[t._id] = t.get({ plain: true });
+            return acc;
+        }, {})
+    );
+
+    cls.schedule.forEach((s) => {
+        s.teacher = teachers[s.teacher] || {
+            name: 'Unknown'
+        };
+    });
+    return cls;
 };
