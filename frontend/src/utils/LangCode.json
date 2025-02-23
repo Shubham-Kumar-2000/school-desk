@@ -1,0 +1,25 @@
+{
+  "languageCodes": {
+    "Sanskrit": "sa-IN",
+    "Odia": "or-IN",
+    "Kashmiri": "ks-IN",
+    "Dogri": "doi-IN",
+    "Gujarati": "gu-IN",
+    "Kannada": "kn-IN",
+    "Urdu": "ur-IN",
+    "Hindi": "hi-IN",
+    "Nepali": "ne-NP",
+    "Sindhi": "sd-IN",
+    "Tamil": "ta-IN",
+    "Telugu": "te-IN",
+    "Konkani": "kok-IN",
+    "Punjabi": "pa-IN",
+    "Bodo": "brx-IN",
+    "Bengali": "bn-IN",
+    "Marathi": "mr-IN",
+    "Maithili": "mai-IN",
+    "English": "en-US",
+    "Malayalam": "ml-IN",
+    "Assamese": "as-IN"
+  }
+}
