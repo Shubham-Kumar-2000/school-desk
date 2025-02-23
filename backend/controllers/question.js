@@ -141,13 +141,12 @@ exports.answerQuestionForTeacher = async (request, response, context) => {
     question.humanAnswered = true;
 
     if (Array.isArray(question.answers)) {
-        question.answers = [
-            ...question.answers.push({
-                text: text,
-                answeredByAi: false,
-                answeredBy: currentAdmin._id
-            })
-        ];
+        question.answers.push({
+            text: text,
+            answeredByAi: false,
+            answeredBy: currentAdmin._id
+        });
+        question.answers = [...question.answers];
     } else {
         const currentAnswers = JSON.parse(question.answers || '[]');
         currentAnswers.push({

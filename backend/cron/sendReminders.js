@@ -25,13 +25,15 @@ exports.send = async () => {
 };
 
 const getNotices = async () => {
-    const interval = new Date(Date.now() - SCHEDULER_INTERVAL);
+    const now = Date.now();
+    const timeDelta = new Date(now - (now % (1000 * 60)));
+    const interval = new Date(timeDelta - SCHEDULER_INTERVAL);
     const notices = await Notice.findAll({
         where: {
             published: false,
             publishOn: {
                 [Op.gte]: interval,
-                [Op.lte]: new Date()
+                [Op.lte]: timeDelta
             }
         }
     });
@@ -39,11 +41,13 @@ const getNotices = async () => {
     return processList(notices);
 };
 const getReminders = async () => {
-    const interval = new Date(Date.now() - SCHEDULER_INTERVAL);
+    const now = Date.now();
+    const timeDelta = new Date(now - (now % (1000 * 60)));
+    const interval = new Date(timeDelta - SCHEDULER_INTERVAL);
     const reminders = await Notice.findAll({
         where: {
             reminders: {
-                [Op.overlap]: [interval, new Date()]
+                [Op.overlap]: [interval, timeDelta]
             }
         }
     });
@@ -51,13 +55,15 @@ const getReminders = async () => {
     return processList(reminders);
 };
 const getResults = async () => {
-    const interval = new Date(Date.now() - SCHEDULER_INTERVAL);
+    const now = Date.now();
+    const timeDelta = new Date(now - (now % (1000 * 60)));
+    const interval = new Date(timeDelta - SCHEDULER_INTERVAL);
     const results = await Result.findAll({
         where: {
             published: false,
             publishOn: {
                 [Op.gte]: interval,
-                [Op.lte]: new Date()
+                [Op.lte]: timeDelta
             }
         }
     });
@@ -68,8 +74,8 @@ const getResults = async () => {
 const processList = (list) => {
     return list.map((item) => {
         return {
-            key: item.id,
-            value: item.id
+            key: item._id,
+            value: item._id
         };
     });
 };

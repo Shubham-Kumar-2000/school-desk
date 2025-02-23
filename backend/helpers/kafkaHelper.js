@@ -11,21 +11,25 @@ const producer = kafka.producer();
 exports.produceMessages = async (messages) => {
     await producer.connect();
     console.log('Producer connected');
-    if (messages.notice?.size > 0) {
+    if (messages.notice?.length > 0) {
+        console.log('sent', {
+            topic: KAFKA_TOPICS.notice,
+            messages: messages.notice
+        });
         await producer.send({
             topic: KAFKA_TOPICS.notice,
             messages: messages.notice
         });
     }
 
-    if (messages.reminder?.size > 0) {
+    if (messages.reminder?.length > 0) {
         await producer.send({
             topic: KAFKA_TOPICS.reminder,
             messages: messages.reminder
         });
     }
 
-    if (messages.result?.size > 0) {
+    if (messages.result?.length > 0) {
         await producer.send({
             topic: KAFKA_TOPICS.result,
             messages: messages.result

@@ -13,25 +13,23 @@ const { sendMsg } = require('./smsHelper');
 const { translate } = require('./translationHelper');
 
 exports.processNotice = async (value, isReminder) => {
-    const notice = await Notice.findByPk(value, {
-        include: [
-            {
-                model: Student,
-                as: 'student'
-            },
-            {
-                model: Student,
-                as: 'students'
-            }
-        ]
-    });
+    const notice = await Notice.findByPk(value);
+
     switch (notice.targets.audienceType) {
         case TARGET_AUDIENCE_TYPES.STUDENT:
-            await processStudent(notice, notice.targets.student, isReminder);
+            await processStudent(
+                notice,
+                await Student.findByPk(notice.targets.student),
+                isReminder
+            );
             break;
         case TARGET_AUDIENCE_TYPES.GROUP_OF_STUDENTS:
             for (const student of notice.targets.students) {
-                await processStudent(notice, student, isReminder);
+                await processStudent(
+                    notice,
+                    await Student.findByPk(student),
+                    isReminder
+                );
             }
             break;
         case TARGET_AUDIENCE_TYPES.CLASS:
@@ -51,6 +49,7 @@ exports.processNotice = async (value, isReminder) => {
 };
 
 const processStudent = async (notice, student, isReminder) => {
+    if (!student) return;
     const guardian = await Guardian.findOne({
         where: {
             students: {
@@ -75,7 +74,9 @@ const processStudent = async (notice, student, isReminder) => {
 };
 
 const processClass = async (notice, classId, isReminder) => {
-    const students = await Student.find({ currentClass: classId });
+    const students = await Student.findAll({
+        where: { currentClass: classId }
+    });
     for (const student of students) {
         await processStudent(notice, student, isReminder);
     }
@@ -156,37 +157,39 @@ const calculatePercentage = (resultRows) => {
 
 exports.processQueryResponse = async (value) => {
     const data = JSON.parse(value);
-    const students = await Student.findAll({ _id: { $in: data.studentIds } });
+    const students = await Student.findAll({where : { _id: { [Op.in]: data.studentIds });
     for (const student of students)
         await sendResponse(student, data.title, data.description);
 };
 
 const sendResponse = async (student, title, description) => {
-    const guardian = await Guardian.findOne({
+    const guardians = await Guardian.findAll({
         where: {
             students: {
                 [Op.contains]: [student._id]
             }
         }
     });
-    const finalTitle = await translate(
-        title,
-        SUPPORTED_LANGUAGES.English.key,
-        guardian.preferredLanguage
-    );
-    const finalDescription = await translate(
-        description,
-        SUPPORTED_LANGUAGES.English.key,
-        guardian.preferredLanguage
-    );
-    if (guardian.notificationSettings.sms) {
-        await sendMsg(guardian.phone, `${finalTitle}\n${finalDescription}`);
-    }
-    if (guardian.notificationSettings.pushToken) {
-        await sendNotification(
-            guardian.notificationSettings.pushToken,
-            finalTitle,
-            finalDescription
+    await Promise.all(guardians.map(guardian=>{
+        const finalTitle = await translate(
+            title,
+            SUPPORTED_LANGUAGES.English.key,
+            guardian.preferredLanguage
         );
-    }
+        const finalDescription = await translate(
+            description,
+            SUPPORTED_LANGUAGES.English.key,
+            guardian.preferredLanguage
+        );
+        if (guardian.notificationSettings.sms) {
+            await sendMsg(guardian.phone, `${finalTitle}\n${finalDescription}`);
+        }
+        if (guardian.notificationSettings.pushToken) {
+            await sendNotification(
+                guardian.notificationSettings.pushToken,
+                finalTitle,
+                finalDescription
+            );
+        }
+    }))
 };

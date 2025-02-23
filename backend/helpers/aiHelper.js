@@ -100,8 +100,7 @@ exports.askAi = async (question, student, guardian, noticeId) => {
               '\n\n'
             : ''
     }Please answer the below question asked by the guardian in plain text no formatting
-    If the question is not answerable just "I couldn't answer that.".
-    Don't provide unnecessary details.
+    If the question is not understandable just "I couldn't answer that.".
     `;
     console.log(prompt);
 
