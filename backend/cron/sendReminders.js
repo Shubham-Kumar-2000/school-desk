@@ -35,6 +35,7 @@ const getNotices = async () => {
             }
         }
     });
+    console.log('Notices Got: ', notices.length);
     return processList(notices);
 };
 const getReminders = async () => {
@@ -46,6 +47,7 @@ const getReminders = async () => {
             }
         }
     });
+    console.log('reminders Got: ', reminders.length);
     return processList(reminders);
 };
 const getResults = async () => {
@@ -59,6 +61,7 @@ const getResults = async () => {
             }
         }
     });
+    console.log('results Got: ', results.length);
     return processList(results);
 };
 
