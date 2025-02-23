@@ -46,7 +46,6 @@ const getAdminRouter = async () => {
     const AdminJS = (await import('adminjs')).default;
     const AdminJSExpress = (await import('@adminjs/express')).default;
     const AdminJSSequelize = await import('@adminjs/sequelize');
-    const { files } = await import('../admin/uploadImage.mjs');
     const { componentLoader, Components } = await import(
         '../admin/component-loader.mjs'
     );
@@ -657,8 +656,7 @@ const getAdminRouter = async () => {
                         }
                     }
                 }
-            },
-            files
+            }
         ],
         componentLoader,
         branding: {
