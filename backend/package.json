@@ -6,6 +6,7 @@
     "node": ">=16.0.0"
   },
   "scripts": {
+    "initBackend": "node init.js",
     "start": "node ./bin/www",
     "dev": "nodemon ./bin/www",
     "format": "./node_modules/.bin/eslint . --fix",
