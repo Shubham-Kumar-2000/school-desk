@@ -42,7 +42,6 @@ const DashboardHeader = () => {
       >
         <Text textAlign="center" color="white">
           <H2>Welcome On School-Desk Admin Panel</H2>
-          <Text opacity={0.8}>Made with ❤ from CodeStrike</Text>
         </Text>
       </Box>
     </Box>
