@@ -43,6 +43,120 @@ module.exports = {
             bcp_code: 'hi-IN',
             indic_trans_code: 'hi',
             reminderText: 'अनुस्मारक'
+        },
+        Sanskrit: {
+            key: 'Sanskrit',
+            bcp_code: 'sa-IN',
+            indic_trans_code: 'sa',
+            reminderText: 'स्मरणपत्रम्'
+        },
+        Odia: {
+            key: 'Odia',
+            bcp_code: 'or-IN',
+            indic_trans_code: 'or',
+            reminderText: 'ମନେ ପକାନ୍ତୁ'
+        },
+        Kashmiri: {
+            key: 'Kashmiri',
+            bcp_code: 'ks-IN',
+            indic_trans_code: 'ks',
+            reminderText: 'یاد دہانی'
+        },
+        Dogri: {
+            key: 'Dogri',
+            bcp_code: 'doi-IN',
+            indic_trans_code: 'doi',
+            reminderText: 'याद दहानी'
+        },
+        Gujarati: {
+            key: 'Gujarati',
+            bcp_code: 'gu-IN',
+            indic_trans_code: 'gu',
+            reminderText: 'યાદ અપાવો'
+        },
+        Kannada: {
+            key: 'Kannada',
+            bcp_code: 'kn-IN',
+            indic_trans_code: 'kn',
+            reminderText: 'ನೆನಪಿಸಿ'
+        },
+        Urdu: {
+            key: 'Urdu',
+            bcp_code: 'ur-IN',
+            indic_trans_code: 'ur',
+            reminderText: 'یاد دہانی'
+        },
+        Nepali: {
+            key: 'Nepali',
+            bcp_code: 'ne-NP',
+            indic_trans_code: 'ne',
+            reminderText: 'स्मरण'
+        },
+        Sindhi: {
+            key: 'Sindhi',
+            bcp_code: 'sd-IN',
+            indic_trans_code: 'sd',
+            reminderText: 'ياد ڏياريندڙ'
+        },
+        Tamil: {
+            key: 'Tamil',
+            bcp_code: 'ta-IN',
+            indic_trans_code: 'ta',
+            reminderText: 'நினைவூட்டல்'
+        },
+        Telugu: {
+            key: 'Telugu',
+            bcp_code: 'te-IN',
+            indic_trans_code: 'te',
+            reminderText: 'గుర్తుచేయు'
+        },
+        Konkani: {
+            key: 'Konkani',
+            bcp_code: 'gom-IN',
+            indic_trans_code: 'gom',
+            reminderText: 'याद कर'
+        },
+        Punjabi: {
+            key: 'Punjabi',
+            bcp_code: 'pa-IN',
+            indic_trans_code: 'pa',
+            reminderText: 'ਯਾਦ ਕਰਾਓ'
+        },
+        Bodo: {
+            key: 'Bodo',
+            bcp_code: 'brx-IN',
+            indic_trans_code: 'brx',
+            reminderText: 'गोसो हो'
+        },
+        Bengali: {
+            key: 'Bengali',
+            bcp_code: 'bn-IN',
+            indic_trans_code: 'bn',
+            reminderText: 'স্মারক'
+        },
+        Marathi: {
+            key: 'Marathi',
+            bcp_code: 'mr-IN',
+            indic_trans_code: 'mr',
+            reminderText: 'आठवण'
+        },
+        Maithili: {
+            key: 'Maithili',
+            bcp_code: 'mai-IN',
+            indic_trans_code: 'mai',
+            reminderText: 'याद दिलाउ'
+        },
+        Malayalam: {
+            key: 'Malayalam',
+            bcp_code: 'ml-IN',
+            indic_trans_code: 'ml',
+            reminderText: 'ഓർമ്മിപ്പിക്കുക'
+        },
+        Assamese: {
+            key: 'Assamese',
+            bcp_code: 'as-IN',
+            indic_trans_code: 'as',
+            reminderText: 'সোঁৱৰাই দিয়ক'
         }
     },
 

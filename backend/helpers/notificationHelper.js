@@ -50,27 +50,31 @@ exports.processNotice = async (value, isReminder) => {
 
 const processStudent = async (notice, student, isReminder) => {
     if (!student) return;
-    const guardian = await Guardian.findOne({
+    const guardians = await Guardian.findOne({
         where: {
             students: {
                 [Op.contains]: [student._id]
             }
         }
     });
-    const message = await getMessage(notice, guardian, isReminder);
-    if (guardian.notificationSettings.sms) {
-        await sendMsg(
-            guardian.phone,
-            `${message.title}\n${message.description}`
-        );
-    }
-    if (guardian.notificationSettings.pushToken) {
-        await sendNotification(
-            guardian.notificationSettings.pushToken,
-            message.title,
-            message.description
-        );
-    }
+    await Promise.all(
+        guardians.map(async (guardian) => {
+            const message = await getMessage(notice, guardian, isReminder);
+            if (guardian.notificationSettings.sms) {
+                await sendMsg(
+                    guardian.phone,
+                    `${message.title}\n${message.description}`
+                );
+            }
+            if (guardian.notificationSettings.pushToken) {
+                await sendNotification(
+                    guardian.notificationSettings.pushToken,
+                    message.title,
+                    message.description
+                );
+            }
+        })
+    );
 };
 
 const processClass = async (notice, classId, isReminder) => {
