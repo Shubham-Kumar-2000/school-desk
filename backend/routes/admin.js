@@ -643,6 +643,14 @@ const getAdminRouter = async () => {
                             before: [beforeHookWrapper(getQuestionForTeacher)]
                         },
                         answer: {
+                            isVisible: (context) => {
+                                const { record } = context;
+
+                                return (
+                                    record?.params?.humanAnswered == false &&
+                                    record?.params?.requiredHumanIntervention
+                                );
+                            },
                             actionType: 'record',
                             component: Components.Answer,
                             handler: handlerWrapper(answerQuestionForTeacher)

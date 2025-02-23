@@ -91,18 +91,18 @@ exports.askQuestion = async (req, res, next) => {
 exports.getQuestionForTeacher = async (request, context) => {
     const { query = {} } = request;
     if (Object.keys(query).length === 0) {
-        query['filters.requiredHumanIntervention'] = true;
-        query['filters.humanAnswered'] = false;
+        query['filters.requiredHumanIntervention'] = 'true';
+        query['filters.humanAnswered'] = 'false';
     }
 
     if (
         Object.keys(query).includes('filters.humanAnswered') &&
         !Object.keys(query).includes('filters.requiredHumanIntervention')
     ) {
-        query['filters.requiredHumanIntervention'] = true;
+        query['filters.requiredHumanIntervention'] = 'true';
     }
 
-    query['filters.askedTo'] = context.currentAdmin._id;
+    // query['filters.askedTo'] = context.currentAdmin._id;
 
     const newQuery = {
         ...query
@@ -157,7 +157,17 @@ exports.answerQuestionForTeacher = async (request, response, context) => {
         question.answers = currentAnswers;
     }
 
-    await question.save();
+    await Question.update(
+        {
+            humanAnswered: true,
+            answers: question.answers
+        },
+        {
+            where: {
+                _id: record.params._id
+            }
+        }
+    );
     processQueryResponse(
         [question.askedByStudent],
         'Query Answered : ',
