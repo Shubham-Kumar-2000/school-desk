@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 const { SUPPORTED_LANGUAGES } = require('../config/constants');
 const { askAi } = require('../helpers/aiHelper');
 const { CustomError } = require('../helpers/errorHelper');

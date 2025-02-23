@@ -32,6 +32,11 @@ const getApp = async () => {
     app.use('/notice', tokenHelper.validate, noticeRouter);
     app.use('/questions', tokenHelper.validate, questionsRouter);
 
+    app.use('/', (req, res, next) => {
+        if (req.originalUrl == '/') return res.redirect('/admin');
+        return next();
+    });
+
     app.use(function (req, res, next) {
         next(createError(404));
     });

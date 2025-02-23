@@ -698,7 +698,7 @@ const getAdminRouter = async () => {
         null,
         {
             store: new PgStore({
-                conString: `postgres://${process.env.PG_USER}:${process.env.PG_PASSWORD}@${process.env.PG_HOST}:5432/school-desk-session`,
+                conString: `postgres://${process.env.PG_USER}:${process.env.PG_PASSWORD}@${process.env.PG_HOST}:5432/${process.env.PG_DATABASE}`,
                 ttl: ADMIN_AUTH_SESSION_EXPIRY_HOURS,
                 createTableIfMissing: true
             }),
