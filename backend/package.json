@@ -35,7 +35,6 @@
     "express-sitemap-xml": "^3.0.1",
     "express-useragent": "^1.0.15",
     "express-validation": "^4.1.0",
-    "firebase-admin": "^13.1.0",
     "flat": "^5.0.2",
     "geo-distance": "^0.2.0",
     "geolib": "^3.3.4",

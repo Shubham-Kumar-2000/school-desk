@@ -2,8 +2,6 @@ require('dotenv').config({ path: '.env' });
 const { CustomError } = require('./helpers/errorHelper');
 const db = require('./models/init');
 
-require('./firebase-secret.json');
-
 const args = process.argv.slice(2); // Get command-line arguments (excluding node and script name)
 
 if (args.length !== 3) {

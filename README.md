@@ -9,7 +9,6 @@ Installation steps
 - Get a AWS account with access to SNS.
 - Get Gemini API Keys
 - Open `backend` as root directory
-- Get a Firebase account generate service key and store in `backend` as `firebase-secret.json`
 - Copy the `sample.env` and create a `.env` with proper values.
 - Run `npm i`
 - Run `npm run initBackend <admin_name> <email> <password>`. This will init the database and create a admin with the given values.
@@ -23,7 +22,6 @@ Installation steps
 Installation steps
 
 - Open `frontend` as root directory
-- Get a Firebase account generate vapid key and client config to store in `src/utils` as `firebase.js`
 - Copy the `sample.env` and create a `.env` with proper values.
 - Run `npm i & npm build`
 - Run `npm start`. 

@@ -8,7 +8,6 @@ const Guardian = require('../models/guardian');
 const Notice = require('../models/notice');
 const Result = require('../models/result');
 const Student = require('../models/student');
-const { sendNotification } = require('./firebaseHelper');
 const { sendMsg } = require('./smsHelper');
 const { translate } = require('./translationHelper');
 
@@ -64,13 +63,6 @@ const processStudent = async (notice, student, isReminder) => {
                 await sendMsg(
                     guardian.phone,
                     `${message.title}\n${message.description}`
-                );
-            }
-            if (guardian.notificationSettings.pushToken) {
-                await sendNotification(
-                    guardian.notificationSettings.pushToken,
-                    message.title,
-                    message.description
                 );
             }
         })
