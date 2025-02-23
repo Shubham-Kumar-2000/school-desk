@@ -135,10 +135,13 @@ exports.processResult = async (value) => {
             student: result.student,
             acknowledgementRequired: true
         },
+        resultAttached: value,
         createdBy: result.createdBy
     };
+
     await this.processNotice((await Notice.create(notice))._id, false);
     result.published = true;
+
     await result.save();
 };
 

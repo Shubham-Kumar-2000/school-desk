@@ -86,24 +86,6 @@ const Dashboard = () => {
         <Card width={1} m="lg">
           <Text textAlign="center">
             <img src="https://cs-school-desk.s3.amazonaws.com/1/1.png" />
-            <H5>Have more advanced use cases?</H5>
-            <Text>
-              We are here to provide you a software to solve all your use cases
-            </Text>
-            <Text mt="xxl">
-              <Button
-                as="a"
-                variant="contained"
-                href="https://services.codestrike.dev/"
-                target="_blank"
-              >
-                Contact Us
-              </Button>
-            </Text>
-            <img
-              src="https://services.codestrike.dev/images/newLogo.png"
-              width={50}
-            />
           </Text>
         </Card>
       </Box>
