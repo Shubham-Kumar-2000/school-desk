@@ -129,14 +129,17 @@ exports.processResult = async (value) => {
         title,
         description: `Percentage: ${percentage}%\n${subjectScores}`,
         noticeType: NOTICE_TYPES.INFO,
-        publishedOn: result.publishOn,
+        publishOn: new Date(),
         targets: {
             audienceType: TARGET_AUDIENCE_TYPES.STUDENT,
-            student: result.student
+            student: result.student,
+            acknowledgementRequired: true
         },
         createdBy: result.createdBy
     };
-    await this.processNotice(await Notice.save(notice), false);
+    await this.processNotice((await Notice.create(notice))._id, false);
+    result.published = true;
+    await result.save();
 };
 
 const calculatePercentage = (resultRows) => {
@@ -184,13 +187,6 @@ const sendResponse = async (student, title, description) => {
                 await sendMsg(
                     guardian.phone,
                     `${finalTitle}\n${finalDescription}`
-                );
-            }
-            if (guardian.notificationSettings.pushToken) {
-                await sendNotification(
-                    guardian.notificationSettings.pushToken,
-                    finalTitle,
-                    finalDescription
                 );
             }
         })
