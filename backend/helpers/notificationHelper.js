@@ -49,7 +49,7 @@ exports.processNotice = async (value, isReminder) => {
 
 const processStudent = async (notice, student, isReminder) => {
     if (!student) return;
-    const guardians = await Guardian.findOne({
+    const guardians = await Guardian.findAll({
         where: {
             students: {
                 [Op.contains]: [student._id]
