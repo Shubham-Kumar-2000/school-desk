@@ -2,7 +2,8 @@ import { FormalLoader } from "@/components/helper/FormalLoader";
 import { fetchUserData, sendOtp, verifyOtp } from "@/requests/ApiServices";
 import { getStudentId, getToken } from "@/utils/CookieManager";
 import { useRouter } from "next/router";
-import { createContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import CacheContext from "./CacheContext";
 
 const LoginContext = createContext();
 export default LoginContext;
@@ -13,6 +14,7 @@ export const LoginProvider = ({ children }) => {
   const [phone, setPhone] = useState("");
   const [loggedIn, setLoggedIn] = useState(false);
   const [appLoader, setAppLoader] = useState(true);
+  const {fetchUserDataWithCache} = useContext(CacheContext);
   const router = useRouter();
 
   const handleOTPInput = async (phoneNumber) => {
@@ -55,7 +57,7 @@ export const LoginProvider = ({ children }) => {
 
   const getLoggedInUserData = async () => {
     if (getToken()) {
-      await fetchUserData()
+      await fetchUserDataWithCache()
         .then((res) => {
           if (res.data) {
             let result = res.data;

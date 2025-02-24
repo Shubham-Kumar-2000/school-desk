@@ -32,6 +32,7 @@ import { useSnackbar } from "notistack";
 import { NOTICE_TYPES } from "@/utils/Helpers";
 import Chip from "@mui/material/Chip";
 import { IoMdCloseCircleOutline } from "react-icons/io";
+import CacheContext from "@/context/CacheContext";
 
 const Transition = forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -50,6 +51,7 @@ export const Announcement = () => {
   const [currentNotice, setCurrentNotice] = useState(null);
   const [activeTab, setActiveTab] = useState("ALL");
   const [results, setResults] = useState(null);
+  const { fetchAnnouncementsWithCache } = useContext(CacheContext);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -57,15 +59,22 @@ export const Announcement = () => {
 
   const fetchAnnouncements = async () => {
     setLoading(true);
-    await fetchStudentNotifications({
+    await fetchAnnouncementsWithCache({
       page,
       noticeType: activeTab === "ALL" ? null : activeTab,
     })
       .then((res) => {
         console.log({ res });
-        if (!res.data.err) {
+        if (!res.data.err && !res.offLine) {
+          console.log("working in online mode");
           setAnnouncements(res.data.notices);
           setHasMore(res.data.hasNext);
+        } else {
+          if (res.offLine) {
+            console.log("working in offline mode");
+            setAnnouncements(res.data.notices);
+            setHasMore(res.data.hasNext);
+          }
         }
         setLoading(false);
       })
@@ -197,17 +206,19 @@ export const Announcement = () => {
                         </p>
                       </div>
                       <div className="flex items-center gap-4 text-gray-500">
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <PiSpeakerHighBold
-                              className="w-5 h-5 cursor-pointer hover:text-gray-700"
-                              onClick={() => readALoud(announcement)}
-                            />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Read A Loud</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        {["English", "Hindi"].includes(preferredLanguage) && (
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <PiSpeakerHighBold
+                                className="w-5 h-5 cursor-pointer hover:text-gray-700"
+                                onClick={() => readALoud(announcement)}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Read A Loud</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                         <Tooltip>
                           <TooltipTrigger>
                             <MessageCircle

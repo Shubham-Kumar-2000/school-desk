@@ -7,8 +7,8 @@
   },
   "scripts": {
     "initBackend": "node init.js",
-    "start": "node ./bin/www",
-    "dev": "nodemon ./bin/www",
+    "start": "node init && node ./bin/www",
+    "dev": "node init && nodemon ./bin/www",
     "format": "./node_modules/.bin/eslint . --fix",
     "cron": "node scheduler.js",
     "kafka": "node kafka.js"
