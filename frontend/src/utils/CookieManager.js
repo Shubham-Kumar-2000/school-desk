@@ -3,37 +3,52 @@ import Cookies from "universal-cookie";
 const cookies = new Cookies();
 
 export const setToken = (token) => {
-  cookies.set("token", token, { path: "/" });
+  localStorage.setItem("token", JSON.stringify(token));
 };
 
 export const getToken = () => {
-  return cookies.get("token");
+  const token = localStorage.getItem("token");
+  try {
+    return JSON.parse(token);
+  } catch (error) {
+    return token; // Handle cases where it's not JSON
+  }
 };
 
 export const logout = () => {
-  cookies.remove("token", { path: "/" });
+  localStorage.removeItem("token");
 };
 
 export const setTempToken = (token) => {
-  cookies.set("temp_token", token, { path: "/" });
+  localStorage.setItem("temp_token", JSON.stringify(token));
 };
 
 export const clearTempToken = () => {
-  cookies.remove("temp_token");
+  localStorage.removeItem("temp_token");
 };
 
 export const getTempToken = () => {
-  return cookies.get("temp_token");
-};
-
-export const getStudentId = () => {
-  return cookies.get("student_id");
+  const token = localStorage.getItem("temp_token");
+  try {
+    return JSON.parse(token);
+  } catch (error) {
+    return token;
+  }
 };
 
 export const setStudentId = (id) => {
-  cookies.set("student_id", id, { path: "/" });
+  localStorage.setItem("student_id", JSON.stringify(id));
+};
+
+export const getStudentId = () => {
+  const id = localStorage.getItem("student_id");
+  try {
+    return JSON.parse(id);
+  } catch (error) {
+    return id;
+  }
 };
 
 export const clearStudentId = () => {
-  cookies.remove("student_id");
+  localStorage.removeItem("student_id");
 };

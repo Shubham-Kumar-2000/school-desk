@@ -50,6 +50,8 @@ export const Profile = () => {
       setLanguage(user.preferredLanguage);
       setSms(user.notificationSettings.sms);
       handleLanguageChange(user.preferredLanguage);
+    } else {
+
     }
   }, [user]);
 

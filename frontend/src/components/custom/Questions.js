@@ -10,6 +10,7 @@ import { ChatHistory } from "./ChatHistory";
 import TranslationContext from "@/context/TranslationContext";
 import Translations from "@/context/Translations.json";
 import { FormalLoader } from "../helper/FormalLoader";
+import CacheContext from "@/context/CacheContext";
 
 const Transition = forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -17,6 +18,7 @@ const Transition = forwardRef(function Transition(props, ref) {
 
 export const Questions = () => {
   const { preferredLanguage } = useContext(TranslationContext);
+  const { fetchQuestionWithCache } = useContext(CacheContext);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [questionSelected, setQuestionSelected] = useState(null);
@@ -36,11 +38,16 @@ export const Questions = () => {
 
   const fetchQuestionsData = async () => {
     setLoading(true);
-    await fetchQuestions()
+    await fetchQuestionWithCache()
       .then((res) => {
         console.log({ res });
-        if (!res.data.err) {
+        if (!res.data.err && !res.offLine) {
           setQuestions(res.data.questions);
+        } else {
+          if (res.offLine) {
+            console.log("working in offline mode");
+            setQuestions(res.data.questions);
+          }
         }
       })
       .catch((err) => {
